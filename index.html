@@ -108,6 +108,16 @@
   .wine-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
   .wine-card:hover .wine-thumb img { transform: scale(1.04); }
   .wine-thumb .badge { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.92); backdrop-filter: blur(6px); padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: var(--burgundy); letter-spacing: 0.5px; }
+
+  .wine-seal { position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; backdrop-filter: blur(6px); display: inline-flex; align-items: center; gap: 4px; }
+  .wine-seal svg { width: 11px; height: 11px; }
+  .seal-top { background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%); color: #fff; box-shadow: 0 2px 12px rgba(184, 134, 11, 0.45); }
+  .seal-icon { background: rgba(114, 47, 55, 0.95); color: #f5ede0; }
+  .seal-find { background: rgba(74, 122, 79, 0.95); color: #fff; }
+  .seal-expensive { background: rgba(168, 90, 90, 0.92); color: #fff; }
+  .seal-avoid { background: rgba(80, 80, 80, 0.92); color: #fff; }
+
+  .stars span.half { background: linear-gradient(90deg, var(--gold) 50%, var(--gold-soft) 50%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
   .wine-thumb .year { position: absolute; bottom: 12px; left: 12px; font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--ink); background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); padding: 2px 10px; border-radius: 4px; }
   .wine-body { padding: 16px 18px 18px; }
   .wine-producer { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 4px; }
@@ -313,15 +323,6 @@
         Estudos
       </div>
 
-      <div class="nav-section" style="margin-top: 12px;">Ações</div>
-      <div class="nav-item" id="nav-add">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
-        Adicionar Vinho
-      </div>
-      <div class="nav-item" id="nav-export">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-        Exportar JSON
-      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -340,8 +341,7 @@
           <div class="page-sub">Visão executiva da sua jornada vinícola</div>
         </div>
         <div class="page-actions">
-          <button class="btn secondary" onclick="switchView('cellar')">Ver adega</button>
-          <button class="btn" onclick="openAddModal()">+ Adicionar</button>
+          <button class="btn secondary" onclick="switchView('cellar')">Ver vinhos</button>
         </div>
       </div>
 
@@ -407,9 +407,6 @@
           <h1 class="page-title">Vinhos</h1>
           <div class="page-sub"><span id="cellar-count">0</span> vinhos · ordenados pelo mais recente · clique para editar</div>
         </div>
-        <div class="page-actions">
-          <button class="btn" onclick="openAddModal()">+ Adicionar</button>
-        </div>
       </div>
 
       <div class="filters">
@@ -437,10 +434,6 @@
           <h1 class="page-title">Cadastro</h1>
           <div class="page-sub">Edite qualquer campo · auto-save<span class="save-status idle" id="save-indicator"><span class="pulse"></span><span id="save-indicator-text">Tudo salvo</span></span></div>
         </div>
-        <div class="page-actions">
-          <button class="btn secondary" onclick="exportJSON()">Exportar</button>
-          <button class="btn" onclick="openAddModal()">+ Adicionar</button>
-        </div>
       </div>
       <div class="table-wrap">
         <table class="cadastro">
@@ -451,6 +444,9 @@
           </thead>
           <tbody id="cadastro-body"></tbody>
         </table>
+      </div>
+      <div style="margin-top: 16px; text-align: center; font-size: 11px; color: var(--ink-mute);">
+        <a href="#" onclick="exportJSON();return false;" style="color: var(--ink-mute); text-decoration: underline;">Exportar backup (.json)</a>
       </div>
     </section>
 
@@ -530,14 +526,8 @@
             <button type="button" class="tag-vh" data-tag="Vinhasso">Vinhasso</button>
           </div>
         </div>
-        <div class="form-grp full"><label>Avaliação</label>
-          <div class="rating-input" id="m-rating">
-            <button type="button" data-val="1">★</button>
-            <button type="button" data-val="2">★</button>
-            <button type="button" data-val="3">★</button>
-            <button type="button" data-val="4">★</button>
-            <button type="button" data-val="5">★</button>
-          </div>
+        <div class="form-grp full"><label>Estrelas <span style="color:var(--ink-mute);font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">(automático conforme avaliação)</span></label>
+          <div id="m-stars-preview" style="font-size: 22px; color: var(--gold-soft); padding: 4px 0;"></div>
         </div>
         <div class="form-grp full"><label>Observações</label><textarea id="m-notes" placeholder="Aroma, paladar, harmonização, contexto..."></textarea></div>
       </div>
@@ -766,7 +756,7 @@ const SEED = [
   { id: 105, photo: "Photos/IMG_7591.jpeg", name: "Barbaresco San Stunet", producer: "Piero Busso", year: 2021, country: "Itália", region: "Neive, Barbaresco, Piemonte", grape: "Nebbiolo", type: "Tinto", rating: 0, date: "2025-12-11", notes: "Cru próprio de Piero Busso — 4669 garrafas.", lat: 44.7333, lng: 8.1167 }
 ];
 
-const STORAGE_KEY = 'pd-cellar-v7';
+const STORAGE_KEY = 'pd-cellar-v8';
 let wines = loadWines();
 let editingId = null;
 let pendingPhoto = null;
@@ -790,11 +780,21 @@ function migrateOldTag(w) {
 function loadWines() {
   let saved = null;
   try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) saved = JSON.parse(raw); } catch (e) {}
-  if (!saved) return [...SEED];
-  saved.forEach(migrateOldTag);
+  if (!saved) saved = [...SEED];
+  saved.forEach(w => {
+    migrateOldTag(w);
+    // Stars auto: deriva de tagRating quando definido
+    if (w.tagRating) w.rating = tagToRating(w.tagRating);
+  });
   const existingPhotos = new Set(saved.map(w => w.photo).filter(Boolean));
   let nextId = Math.max(0, ...saved.map(w => w.id || 0)) + 1;
-  SEED.forEach(s => { if (s.photo && !existingPhotos.has(s.photo)) saved.push({ ...s, id: nextId++ }); });
+  SEED.forEach(s => {
+    if (s.photo && !existingPhotos.has(s.photo)) {
+      const sCopy = { ...s, id: nextId++ };
+      if (sCopy.tagRating) sCopy.rating = tagToRating(sCopy.tagRating);
+      saved.push(sCopy);
+    }
+  });
   return saved;
 }
 let lastSavedAt = null;
@@ -848,9 +848,26 @@ function bottleSvg(wine) {
   return `<svg viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g${wine.id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${c2}"/><stop offset="50%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect x="42" y="6" width="16" height="22" rx="1" fill="#3a2a28"/><path d="M 38 28 L 38 50 Q 30 58 30 75 L 30 148 Q 30 154 36 154 L 64 154 Q 70 154 70 148 L 70 75 Q 70 58 62 50 L 62 28 Z" fill="url(#g${wine.id})"/><rect x="33" y="80" width="34" height="48" rx="2" fill="#f5ede0" stroke="#d6cdc0" stroke-width="0.5"/><text x="50" y="100" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="14" font-weight="600" fill="#1c1413">${initial}</text><text x="50" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="6" font-weight="500" fill="#722F37" letter-spacing="0.5">${wine.year || ''}</text><line x1="36" y1="120" x2="64" y2="120" stroke="#d6cdc0" stroke-width="0.4"/></svg>`;
 }
 function starsHtml(rating) {
+  rating = Number(rating) || 0;
   let s = '<div class="stars">';
-  for (let i = 1; i <= 5; i++) s += `<span class="${i <= rating ? 'filled' : ''}">★</span>`;
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i) s += '<span class="filled">★</span>';
+    else if (rating >= i - 0.5) s += '<span class="half">★</span>';
+    else s += '<span>★</span>';
+  }
   return s + '</div>';
+}
+function tagToRating(tagRating) {
+  return ({ 'Ruim': 1, 'Bom': 2.5, 'Ótimo': 4, 'Vinhasso': 5 })[tagRating] || 0;
+}
+function getSeal(w) {
+  const r = w.tagRating || ''; const p = w.tagPrice || '';
+  if (r === 'Vinhasso' && p === 'Vale o preço') return { cls: 'seal-top', label: 'Top' };
+  if (r === 'Vinhasso') return { cls: 'seal-icon', label: 'Ícone' };
+  if (r === 'Ótimo' && p === 'Vale o preço') return { cls: 'seal-find', label: 'Achado' };
+  if ((r === 'Ótimo' || r === 'Vinhasso') && p === 'Não vale o preço') return { cls: 'seal-expensive', label: 'Caro' };
+  if (r === 'Ruim') return { cls: 'seal-avoid', label: 'Evitar' };
+  return null;
 }
 function formatDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }); }
 function formatPrice(p) { if (p == null || p === '' || isNaN(p)) return ''; return 'R$ ' + Number(p).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -862,7 +879,7 @@ function renderGrid(targetId, list) {
   if (!list.length) { el.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">Nenhum vinho encontrado com esses filtros.</div>'; return; }
   el.innerHTML = list.map(w => `
     <div class="wine-card" onclick="openEditModal(${w.id})">
-      <div class="wine-thumb">${wineThumb(w)}<span class="badge">${w.type || '—'}</span><span class="year">${w.year || 'NV'}</span></div>
+      <div class="wine-thumb">${wineThumb(w)}${(() => { const s = getSeal(w); return s ? `<span class="wine-seal ${s.cls}">${s.label}</span>` : ''; })()}<span class="badge">${w.type || '—'}</span><span class="year">${w.year || 'NV'}</span></div>
       <div class="wine-body">
         <div class="wine-producer">${escapeHtml(w.producer || '')}</div>
         <div class="wine-name">${escapeHtml(w.name || '')}</div>
@@ -1009,20 +1026,14 @@ function renderCadastro() {
       <td><input data-f="price" type="number" step="0.01" value="${w.price ?? ''}" placeholder="—" /></td>
       <td><select data-f="tagRating">${ratingOpts.map(t => `<option value="${t}" ${t===(w.tagRating||'')?'selected':''}>${t||'—'}</option>`).join('')}</select></td>
       <td><select data-f="tagPrice">${priceOpts.map(t => `<option value="${t}" ${t===(w.tagPrice||'')?'selected':''}>${t||'—'}</option>`).join('')}</select></td>
-      <td><div class="star-edit">${[1,2,3,4,5].map(n => `<button data-rate="${n}" class="${n<=(w.rating||0)?'filled':''}">★</button>`).join('')}</div></td>
+      <td>${(() => { const r = tagToRating(w.tagRating); return r ? starsHtml(r) : '<span style="color:var(--ink-mute);font-size:11px;">—</span>'; })()}</td>
       <td><button class="row-del" data-action="del"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>
     </tr>`).join('');
   tbody.querySelectorAll('input[data-f], select[data-f]').forEach(el => {
     el.addEventListener('change', (e) => updateField(e.target));
     if (el.tagName === 'INPUT') el.addEventListener('blur', (e) => updateField(e.target));
   });
-  tbody.querySelectorAll('.star-edit button').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const tr = e.target.closest('tr'); const id = parseInt(tr.dataset.id); const rate = parseInt(b.dataset.rate);
-      const w = wines.find(x => x.id === id); w.rating = w.rating === rate ? 0 : rate;
-      saveWines(); renderCadastro(); renderDashboard();
-    });
-  });
+  // (Stars são read-only agora — derivadas de tagRating)
   tbody.querySelectorAll('[data-action="del"]').forEach(b => {
     b.addEventListener('click', (e) => {
       const tr = e.target.closest('tr'); const id = parseInt(tr.dataset.id);
@@ -1041,12 +1052,16 @@ function updateField(el) {
   // Skip if no change (prevents double-save on change+blur)
   if ((w[f] ?? '') === (v ?? '')) return;
   w[f] = v;
+  // Recalcular estrelas se mudou tagRating
+  if (f === 'tagRating') w.rating = tagToRating(v);
   saveWines();
   // Flash visual no campo
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
   setTimeout(() => el.classList.remove('flash'), 700);
   populateFilters();
   renderDashboard();
+  // Re-render row to update stars + seal
+  if (f === 'tagRating' || f === 'tagPrice') renderCadastro();
 }
 
 function readExifDate(file, callback) {
@@ -1095,7 +1110,6 @@ function openEditModal(id) {
     const el = document.getElementById('m-' + f); if (el) el.value = w[f] ?? (f === 'type' ? 'Tinto' : '');
   });
   document.getElementById('m-price').value = w.price ?? '';
-  setRating(w.rating || 0);
   setTagPrice(w.tagPrice || '');
   setTagRating(w.tagRating || '');
   document.getElementById('m-delete').style.display = 'inline-flex';
@@ -1109,16 +1123,18 @@ function openAddModal() {
   ['m-name','m-producer','m-year','m-country','m-region','m-grape','m-notes','m-store','m-price'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('m-type').value = 'Tinto';
   document.getElementById('m-date').value = new Date().toISOString().slice(0,10);
-  setRating(0); setTagPrice(''); setTagRating('');
+  setTagPrice(''); setTagRating('');
   document.getElementById('m-delete').style.display = 'none';
   document.getElementById('modal').classList.add('show');
 }
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
-function setRating(v) { document.querySelectorAll('#m-rating button').forEach(b => b.classList.toggle('filled', parseInt(b.dataset.val) <= v)); document.getElementById('m-rating').dataset.value = v; }
-document.querySelectorAll('#m-rating button').forEach(b => b.addEventListener('click', () => setRating(parseInt(b.dataset.val))));
-
+function updateStarsPreview() {
+  const tag = document.getElementById('m-tag-rating').dataset.tag || '';
+  const r = tagToRating(tag);
+  document.getElementById('m-stars-preview').innerHTML = r ? starsHtml(r) : '<span style="font-size:13px;color:var(--ink-mute);">— sem avaliação selecionada</span>';
+}
 function setTagPrice(tag) { document.querySelectorAll('#m-tag-price button').forEach(b => b.classList.toggle('active', b.dataset.tag === tag)); document.getElementById('m-tag-price').dataset.tag = tag || ''; }
-function setTagRating(tag) { document.querySelectorAll('#m-tag-rating button').forEach(b => b.classList.toggle('active', b.dataset.tag === tag)); document.getElementById('m-tag-rating').dataset.tag = tag || ''; }
+function setTagRating(tag) { document.querySelectorAll('#m-tag-rating button').forEach(b => b.classList.toggle('active', b.dataset.tag === tag)); document.getElementById('m-tag-rating').dataset.tag = tag || ''; updateStarsPreview(); }
 document.querySelectorAll('#m-tag-price button').forEach(b => b.addEventListener('click', () => { const cur = document.getElementById('m-tag-price').dataset.tag; setTagPrice(cur === b.dataset.tag ? '' : b.dataset.tag); }));
 document.querySelectorAll('#m-tag-rating button').forEach(b => b.addEventListener('click', () => { const cur = document.getElementById('m-tag-rating').dataset.tag; setTagRating(cur === b.dataset.tag ? '' : b.dataset.tag); }));
 
@@ -1149,7 +1165,8 @@ function saveWine() {
     price: priceRaw === '' ? null : parseFloat(priceRaw),
     tagPrice: document.getElementById('m-tag-price').dataset.tag || '',
     tagRating: document.getElementById('m-tag-rating').dataset.tag || '',
-    rating: parseInt(document.getElementById('m-rating').dataset.value) || 0,
+    // rating é auto-derivado do tagRating
+    rating: tagToRating(document.getElementById('m-tag-rating').dataset.tag || ''),
     notes: document.getElementById('m-notes').value.trim(),
     photo: pendingPhoto
   };
@@ -1187,8 +1204,6 @@ function refreshAll() {
 }
 
 document.querySelectorAll('.nav-item[data-view]').forEach(n => n.addEventListener('click', () => switchView(n.dataset.view)));
-document.getElementById('nav-add').addEventListener('click', openAddModal);
-document.getElementById('nav-export').addEventListener('click', exportJSON);
 ['f-search','f-country','f-region','f-grape','f-rating'].forEach(id => {
   document.getElementById(id).addEventListener('input', applyFilters);
   document.getElementById(id).addEventListener('change', applyFilters);
