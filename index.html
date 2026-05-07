@@ -206,6 +206,45 @@
 
   .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-mute); }
 
+  /* ============ ESTUDOS ============ */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+  .tab { padding: 10px 20px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--ink-mute); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s ease; background: none; border-left: none; border-right: none; border-top: none; font-family: inherit; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--burgundy); border-bottom-color: var(--burgundy); font-weight: 600; }
+  .study-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .study-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; }
+  .study-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); border-color: #e0d4c0; }
+  .study-thumb { aspect-ratio: 16/10; background: linear-gradient(160deg, #f5ede0 0%, #e8dccb 100%); position: relative; overflow: hidden; }
+  .study-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .study-thumb .source-badge { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.92); padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: var(--burgundy); letter-spacing: 0.5px; }
+  .study-body { padding: 14px 18px 16px; }
+  .study-region { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 4px; }
+  .study-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; line-height: 1.25; color: var(--ink); }
+  .pdf-card .study-thumb { background: linear-gradient(160deg, #722F37 0%, #5C1A1B 100%); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; color: #f5ede0; }
+  .pdf-card .pdf-icon { width: 48px; height: 48px; opacity: 0.9; }
+  .pdf-card .pdf-size { font-size: 11px; opacity: 0.75; letter-spacing: 1px; }
+
+  /* ============ LIGHTBOX ============ */
+  .lightbox { position: fixed; inset: 0; background: rgba(20, 12, 13, 0.95); display: none; z-index: 2000; flex-direction: column; }
+  .lightbox.show { display: flex; }
+  .lightbox-bar { padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; color: #f5ede0; }
+  .lightbox-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 500; }
+  .lightbox-actions { display: flex; gap: 8px; align-items: center; }
+  .lightbox-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #f5ede0; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: inherit; transition: background 0.15s; }
+  .lightbox-btn:hover { background: rgba(255,255,255,0.2); }
+  .lightbox-close { background: transparent; border: none; color: #f5ede0; cursor: pointer; padding: 4px; opacity: 0.85; }
+  .lightbox-close:hover { opacity: 1; }
+  .lightbox-content { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 0 24px 24px; }
+  .lightbox-img { max-width: 100%; max-height: 100%; cursor: zoom-in; user-select: none; transition: transform 0.2s; }
+  .lightbox-img.zoomed { max-width: none; max-height: none; cursor: zoom-out; }
+  .lightbox-pdf { width: 100%; height: 100%; border: none; background: white; border-radius: 8px; }
+
+  .map-pop-actions { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); display: flex; gap: 6px; flex-wrap: wrap; }
+  .map-pop-actions button { background: rgba(114,47,55,0.1); color: var(--burgundy); border: 1px solid rgba(114,47,55,0.2); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; font-family: inherit; transition: all 0.15s; }
+  .map-pop-actions button:hover { background: rgba(114,47,55,0.18); }
+  .map-pop-actions button.pdf-action { background: rgba(176,138,78,0.15); color: #8a6a32; border-color: rgba(176,138,78,0.3); }
+  .map-pop-actions button.pdf-action:hover { background: rgba(176,138,78,0.25); }
+
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #d6cdc0; border-radius: 4px; }
@@ -254,6 +293,10 @@
       <div class="nav-item" data-view="analytics">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-5"/></svg>
         Análises
+      </div>
+      <div class="nav-item" data-view="estudos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Estudos
       </div>
 
       <div class="nav-section" style="margin-top: 12px;">Ações</div>
@@ -399,6 +442,20 @@
       <div id="map-container"></div>
     </section>
 
+    <section class="view" id="view-estudos">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Estudos</h1>
+          <div class="page-sub">Mapas e materiais de apoio das principais regiões vinícolas</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="mapas">Mapas <span style="opacity:0.6">· 8</span></button>
+        <button class="tab" data-tab="materiais">Materiais <span style="opacity:0.6">· 7</span></button>
+      </div>
+      <div class="study-grid" id="study-grid"></div>
+    </section>
+
     <section class="view" id="view-analytics">
       <div class="page-head">
         <div>
@@ -493,7 +550,128 @@
   </div>
 </div>
 
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-bar">
+    <div class="lightbox-title" id="lightbox-title"></div>
+    <div class="lightbox-actions">
+      <button class="lightbox-btn" id="lightbox-download">Baixar / Abrir</button>
+      <button class="lightbox-close" onclick="closeLightbox()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="lightbox-content" id="lightbox-content"></div>
+</div>
+
 <script>
+const STUDY_DATA = {
+  maps: [
+    { file: 'maps/borgonha.jpg', region: 'Borgonha', name: 'Mapa Geral da Borgonha', source: 'Wine Folly' },
+    { file: 'maps/cote-de-nuits.jpg', region: 'Côte de Nuits', name: 'Mapa da Côte de Nuits', source: 'Wine Folly' },
+    { file: 'maps/cote-de-beaune.jpg', region: 'Côte de Beaune', name: 'Mapa da Côte de Beaune', source: 'Wine Folly' },
+    { file: 'maps/cote-chalonnaise.jpg', region: 'Côte Chalonnaise', name: 'Mapa da Côte Chalonnaise', source: 'Wine Folly' },
+    { file: 'maps/maconnais.jpg', region: 'Mâconnais', name: 'Mapa do Mâconnais', source: 'Wine Folly' },
+    { file: 'maps/spain.jpg', region: 'Espanha', name: 'Mapa Vinícola da Espanha', source: 'Wine Folly' },
+    { file: 'maps/new-zealand.jpg', region: 'Nova Zelândia', name: 'Mapa Vinícola da Nova Zelândia', source: 'Wine Folly' },
+    { file: 'maps/australia.jpg', region: 'Austrália', name: 'Mapa Vinícola da Austrália', source: 'Wine Folly' },
+  ],
+  materials: [
+    { file: 'materials/borgonha.pdf', region: 'Borgonha', name: 'Borgonha — Material de Apoio', size: '14 MB' },
+    { file: 'materials/borgonha-jovem.pdf', region: 'Borgonha', name: 'Borgonha — Recomendações do Jovem', size: '2 MB' },
+    { file: 'materials/champagne.pdf', region: 'Champagne', name: 'Champagne — Material de Apoio', size: '7 MB' },
+    { file: 'materials/beaujolais.pdf', region: 'Beaujolais', name: 'Beaujolais — Material de Apoio', size: '7 MB' },
+    { file: 'materials/douro.pdf', region: 'Douro', name: 'Douro — Material de Apoio', size: '7 MB' },
+    { file: 'materials/jura.pdf', region: 'Jura', name: 'Jura — Material de Apoio', size: '5 MB' },
+    { file: 'materials/toscana.pdf', region: 'Toscana', name: 'Toscana — Material de Apoio', size: '6 MB' },
+  ]
+};
+
+let currentStudyTab = 'mapas';
+function renderStudy() {
+  const grid = document.getElementById('study-grid'); if (!grid) return;
+  if (currentStudyTab === 'mapas') {
+    grid.innerHTML = STUDY_DATA.maps.map(m => `
+      <div class="study-card" onclick="openLightbox('image', '${m.file}', '${escapeHtml(m.name)}')">
+        <div class="study-thumb">
+          <img src="${m.file}" alt="${escapeHtml(m.name)}" loading="lazy" />
+          <span class="source-badge">${m.source}</span>
+        </div>
+        <div class="study-body">
+          <div class="study-region">${escapeHtml(m.region)}</div>
+          <div class="study-name">${escapeHtml(m.name)}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    grid.innerHTML = STUDY_DATA.materials.map(m => `
+      <div class="study-card pdf-card" onclick="openLightbox('pdf', '${m.file}', '${escapeHtml(m.name)}')">
+        <div class="study-thumb">
+          <svg class="pdf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span class="pdf-size">PDF · ${m.size}</span>
+        </div>
+        <div class="study-body">
+          <div class="study-region">${escapeHtml(m.region)}</div>
+          <div class="study-name">${escapeHtml(m.name)}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function openLightbox(type, file, title) {
+  const content = document.getElementById('lightbox-content');
+  document.getElementById('lightbox-title').textContent = title;
+  document.getElementById('lightbox-download').onclick = () => window.open(file, '_blank');
+  if (type === 'image') {
+    content.innerHTML = `<img class="lightbox-img" src="${file}" alt="${escapeHtml(title)}" onclick="this.classList.toggle('zoomed')" />`;
+  } else if (type === 'pdf') {
+    content.innerHTML = `<iframe class="lightbox-pdf" src="${file}"></iframe>`;
+  }
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+  document.getElementById('lightbox-content').innerHTML = '';
+}
+
+function findStudyResources(region, country) {
+  const text = `${region || ''} ${country || ''}`.toLowerCase();
+  const result = { map: null, pdf: null };
+  const mapRules = [
+    { match: ['côte de nuits', 'cote de nuits', 'nuits-saint', 'vosne', 'morey-saint'], file: 'maps/cote-de-nuits.jpg', label: 'Côte de Nuits' },
+    { match: ['côte de beaune', 'cote de beaune', 'volnay', 'pommard', 'meursault', 'saint-aubin', 'santenay', 'maranges', 'savigny', 'beaune,'], file: 'maps/cote-de-beaune.jpg', label: 'Côte de Beaune' },
+    { match: ['chalonnaise', 'mercurey'], file: 'maps/cote-chalonnaise.jpg', label: 'Côte Chalonnaise' },
+    { match: ['mâconnais', 'maconnais', 'pouilly-loché'], file: 'maps/maconnais.jpg', label: 'Mâconnais' },
+    { match: ['borgonha', 'bourgogne', 'chablis', 'aligoté'], file: 'maps/borgonha.jpg', label: 'Borgonha' },
+    { match: ['ribera', 'valdejalón', 'catalunha', 'conca'], file: 'maps/spain.jpg', label: 'Espanha' },
+    { match: ['marlborough', 'wairarapa', 'zelândia'], file: 'maps/new-zealand.jpg', label: 'Nova Zelândia' },
+    { match: ['austrália', 'australia', 'barossa'], file: 'maps/australia.jpg', label: 'Austrália' },
+  ];
+  for (const r of mapRules) { if (r.match.some(m => text.includes(m))) { result.map = r; break; } }
+  const pdfRules = [
+    { match: ['borgonha', 'bourgogne', 'chablis', 'côte de'], file: 'materials/borgonha.pdf', label: 'Borgonha' },
+    { match: ['champagne'], file: 'materials/champagne.pdf', label: 'Champagne' },
+    { match: ['beaujolais'], file: 'materials/beaujolais.pdf', label: 'Beaujolais' },
+    { match: ['douro'], file: 'materials/douro.pdf', label: 'Douro' },
+    { match: ['jura'], file: 'materials/jura.pdf', label: 'Jura' },
+    { match: ['toscana', 'montalcino', 'barbaresco', 'piemonte', 'langhe', 'etna', 'sicília'], file: 'materials/toscana.pdf', label: 'Toscana / Itália' },
+  ];
+  for (const r of pdfRules) { if (r.match.some(m => text.includes(m))) { result.pdf = r; break; } }
+  return result;
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active'); currentStudyTab = t.dataset.tab; renderStudy();
+  });
+});
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'lightbox' || e.target.id === 'lightbox-content') closeLightbox();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
 const SEED = [
   { id: 1, photo: "Photos/2A42A9FC-CC35-4DA7-BDB7-FFA9808820A3.jpg", name: "Volnay", producer: "Pierrick Bouley", year: 2021, country: "França", region: "Volnay, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2026-05-04", notes: "", lat: 46.9667, lng: 4.7833, store: "", price: null, tag: "Ótimo" },
   { id: 2, photo: "Photos/695820A8-53F7-410D-85CF-F020191BEF7F.jpg", name: "Grande Cuvée 172ème Édition", producer: "Krug", year: null, country: "França", region: "Reims, Champagne", grape: "Pinot Noir, Chardonnay, Pinot Meunier", type: "Espumante", rating: 5, date: "2025-12-09", notes: "Champagne Brut multivintage — assemblage de mais de 120 vinhos.", lat: 49.2583, lng: 4.0317, store: "", price: null, tag: "Vinhasso" },
@@ -724,7 +902,15 @@ function renderMap() {
   wines.forEach(w => { if (!w.lat || !w.lng) return; const k = w.region || 'Sem região'; if (!byRegion[k]) byRegion[k] = { lat: w.lat, lng: w.lng, country: w.country, region: w.region, wines: [] }; byRegion[k].wines.push(w); });
   Object.values(byRegion).forEach(r => {
     const icon = L.divIcon({ className: 'custom-pin', html: `<div style="background:#722F37;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25);"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] });
-    const popup = `<div class="map-pop-name">${escapeHtml(r.region||'')}</div><div class="map-pop-region">${escapeHtml(r.country||'')}</div><div class="map-pop-list">${r.wines.map(w => `• ${escapeHtml(w.producer||'')} — ${escapeHtml(w.name||'')} ${w.year ? `(${w.year})` : ''}`).join('<br>')}</div>`;
+    const study = findStudyResources(r.region, r.country);
+    let actions = '';
+    if (study.map || study.pdf) {
+      actions = '<div class="map-pop-actions">';
+      if (study.map) actions += `<button onclick="openLightbox('image', '${study.map.file}', 'Mapa: ${study.map.label}')">📍 Mapa ${study.map.label}</button>`;
+      if (study.pdf) actions += `<button class="pdf-action" onclick="openLightbox('pdf', '${study.pdf.file}', '${study.pdf.label}')">📄 ${study.pdf.label}</button>`;
+      actions += '</div>';
+    }
+    const popup = `<div class="map-pop-name">${escapeHtml(r.region||'')}</div><div class="map-pop-region">${escapeHtml(r.country||'')}</div><div class="map-pop-list">${r.wines.map(w => `• ${escapeHtml(w.producer||'')} — ${escapeHtml(w.name||'')} ${w.year ? `(${w.year})` : ''}`).join('<br>')}</div>${actions}`;
     L.marker([r.lat, r.lng], { icon }).addTo(mapInstance).bindPopup(popup);
   });
   setTimeout(() => mapInstance.invalidateSize(), 200);
@@ -896,6 +1082,7 @@ function switchView(name) {
   document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
   if (name === 'map') setTimeout(renderMap, 50);
   if (name === 'cadastro') renderCadastro();
+  if (name === 'estudos') renderStudy();
 }
 function exportJSON() {
   const blob = new Blob([JSON.stringify(wines, null, 2)], { type: 'application/json' });
