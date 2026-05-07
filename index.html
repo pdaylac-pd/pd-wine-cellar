@@ -74,7 +74,8 @@
   .btn.secondary:hover { background: var(--bg-card); border-color: var(--ink); }
   .btn svg { width: 14px; height: 14px; }
 
-  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 32px; }
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 14px; }
+  .kpis-fin { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
   .kpi { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; transition: all 0.2s ease; }
   .kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
   .kpi-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 10px; }
@@ -290,8 +291,8 @@
   ::-webkit-scrollbar-thumb { background: #d6cdc0; border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: #b8ad9d; }
 
-  @media (max-width: 1280px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
-  @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, 1fr); } .panels { grid-template-columns: 1fr; } .filters { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 1280px) { .kpis { grid-template-columns: repeat(3, 1fr); } .kpis-fin { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, 1fr); } .kpis-fin { grid-template-columns: repeat(2, 1fr); } .panels { grid-template-columns: 1fr; } .filters { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; } .main { padding: 20px; } .modal-body { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -385,6 +386,29 @@
         </div>
       </div>
 
+      <div class="kpis-fin">
+        <div class="kpi kpi-accent">
+          <div class="kpi-label">Investimento total</div>
+          <div class="kpi-value" id="kpi-total-invest">R$ 0</div>
+          <div class="kpi-foot">soma da adega</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Preço médio</div>
+          <div class="kpi-value" id="kpi-avg-price">R$ 0</div>
+          <div class="kpi-foot">por vinho</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Mais caro</div>
+          <div class="kpi-value" id="kpi-max-price">R$ 0</div>
+          <div class="kpi-foot" id="kpi-max-name">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Top produtor</div>
+          <div class="kpi-value" id="kpi-top-producer-count">0<span class="unit">×</span></div>
+          <div class="kpi-foot" id="kpi-top-producer-name">—</div>
+        </div>
+      </div>
+
       <div class="panels">
         <div class="panel">
           <div class="panel-head"><div><div class="panel-title">Vinhos por país</div><div class="panel-sub">Distribuição da sua adega</div></div></div>
@@ -393,6 +417,39 @@
         <div class="panel">
           <div class="panel-head"><div><div class="panel-title">Top uvas</div><div class="panel-sub">Variedades mais frequentes</div></div></div>
           <div class="chart-wrap"><canvas id="chart-grape"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Top 10 produtores</div><div class="panel-sub">Mais frequentes na adega</div></div></div>
+          <div class="chart-wrap" style="height: 300px;"><canvas id="chart-producers"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Faixa de preço</div><div class="panel-sub">Distribuição dos valores pagos</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-price-bucket"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Top lojas</div><div class="panel-sub">Onde você mais compra</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-stores"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Por tipo</div><div class="panel-sub">Tinto · Branco · Espumante · etc.</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-type"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Por classificação</div><div class="panel-sub">Grand Cru · 1er Cru · Village</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-classification"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Selos conquistados</div><div class="panel-sub">TOP · Achado · Caro · Evitar</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-seals"></canvas></div>
         </div>
       </div>
 
@@ -892,6 +949,19 @@ function starsHtml(rating) {
 function tagToRating(tagRating) {
   return ({ 'Ruim': 1, 'Bom': 2.5, 'Ótimo': 4, 'Vinhasso': 5 })[tagRating] || 0;
 }
+function formatPriceCompact(p) {
+  if (p == null || isNaN(p)) return '—';
+  if (p >= 1000) return 'R$ ' + (p/1000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'k';
+  return 'R$ ' + Math.round(p);
+}
+function getPriceBucket(price) {
+  if (price == null || price === 0) return null;
+  if (price < 200) return '< R$ 200';
+  if (price < 500) return 'R$ 200-500';
+  if (price < 1000) return 'R$ 500-1k';
+  if (price < 2000) return 'R$ 1k-2k';
+  return '> R$ 2k';
+}
 function getSeal(w) {
   const r = w.tagRating || ''; const p = w.tagPrice || '';
   if (r === 'Vinhasso' && p === 'Vale o preço') return { cls: 'seal-top', label: 'Top' };
@@ -1020,6 +1090,23 @@ function renderDashboard() {
     lastFootEl.textContent = `${thisMonth} em ${now.toLocaleDateString('pt-BR', { month: 'long' })}`;
   } else { lastEl.textContent = '—'; lastFootEl.textContent = 'sem datas'; }
 
+  // Financeiro
+  const priced = wines.filter(w => w.price > 0);
+  const totalInvest = priced.reduce((s, w) => s + (w.price || 0), 0);
+  const avgPrice = priced.length ? totalInvest / priced.length : 0;
+  const expensive = priced.length ? priced.reduce((max, w) => (!max || w.price > max.price) ? w : max, null) : null;
+  document.getElementById('kpi-total-invest').textContent = formatPriceCompact(totalInvest);
+  document.getElementById('kpi-avg-price').textContent = formatPriceCompact(avgPrice);
+  document.getElementById('kpi-max-price').textContent = expensive ? formatPriceCompact(expensive.price) : '—';
+  document.getElementById('kpi-max-name').textContent = expensive ? `${expensive.producer || ''} — ${expensive.name || ''}` : 'sem preços ainda';
+
+  // Top produtor
+  const producerCount = {};
+  wines.forEach(w => { if (w.producer) producerCount[w.producer] = (producerCount[w.producer] || 0) + 1; });
+  const topProducer = Object.entries(producerCount).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById('kpi-top-producer-count').innerHTML = topProducer ? `${topProducer[1]}<span class="unit">×</span>` : '0<span class="unit">×</span>';
+  document.getElementById('kpi-top-producer-name').textContent = topProducer ? topProducer[0] : '—';
+
   renderCharts();
 }
 
@@ -1051,8 +1138,66 @@ function renderCharts() {
     charts.vintage = new Chart(document.getElementById('chart-vintage'), { type: 'line', data: { labels: decs.map(d=>d+'s'), datasets: [{ data: decs.map(d=>byDec[d]), borderColor: burgundy, backgroundColor: 'rgba(114,47,55,0.1)', fill: true, tension: 0.35, pointRadius: 5, pointBackgroundColor: burgundy, borderWidth: 2.5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0e8da' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } } });
   }
   if (document.getElementById('chart-rating-dist')) {
-    const dist = [0,0,0,0,0]; wines.forEach(w => { if (w.rating) dist[w.rating-1]++; });
+    const dist = [0,0,0,0,0]; wines.forEach(w => { if (w.rating) dist[Math.min(4, Math.floor(w.rating - 0.5))]++; });
     charts.rdist = new Chart(document.getElementById('chart-rating-dist'), { type: 'bar', data: { labels: ['1★','2★','3★','4★','5★'], datasets: [{ data: dist, backgroundColor: ['#d6cdc0','#b8a89a','#b08a4e','#9a4a5a','#722F37'], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0e8da' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } } });
+  }
+
+  // Top 10 produtores (horizontal bar)
+  if (document.getElementById('chart-producers')) {
+    const pCount = {};
+    wines.forEach(w => { if (w.producer) pCount[w.producer] = (pCount[w.producer] || 0) + 1; });
+    const top = Object.entries(pCount).sort((a,b) => b[1]-a[1]).slice(0, 10);
+    charts.producers = new Chart(document.getElementById('chart-producers'), { type: 'bar', data: { labels: top.map(e => e[0].length > 28 ? e[0].slice(0,28)+'…' : e[0]), datasets: [{ data: top.map(e => e[1]), backgroundColor: burgundy, borderRadius: 6 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { stepSize: 1 } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } } });
+  }
+
+  // Faixa de preço
+  if (document.getElementById('chart-price-bucket')) {
+    const order = ['< R$ 200', 'R$ 200-500', 'R$ 500-1k', 'R$ 1k-2k', '> R$ 2k'];
+    const buckets = {};
+    wines.forEach(w => { const b = getPriceBucket(w.price); if (b) buckets[b] = (buckets[b] || 0) + 1; });
+    const data = order.map(b => buckets[b] || 0);
+    charts.priceBucket = new Chart(document.getElementById('chart-price-bucket'), { type: 'bar', data: { labels: order, datasets: [{ data, backgroundColor: ['#5a7a4f', '#b08a4e', '#a5784e', '#8a4a5a', '#722F37'], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0e8da' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } } });
+  }
+
+  // Top lojas
+  if (document.getElementById('chart-stores')) {
+    const sCount = {};
+    wines.forEach(w => { if (w.store) sCount[w.store] = (sCount[w.store] || 0) + 1; });
+    const top = Object.entries(sCount).sort((a,b) => b[1]-a[1]).slice(0, 8);
+    if (top.length) {
+      charts.stores = new Chart(document.getElementById('chart-stores'), { type: 'bar', data: { labels: top.map(e => e[0]), datasets: [{ data: top.map(e => e[1]), backgroundColor: '#b08a4e', borderRadius: 6 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { stepSize: 1 } }, y: { grid: { display: false } } } } });
+    }
+  }
+
+  // Por tipo
+  if (document.getElementById('chart-type')) {
+    const tCount = {};
+    wines.forEach(w => { if (w.type) tCount[w.type] = (tCount[w.type] || 0) + 1; });
+    const entries = Object.entries(tCount).sort((a,b) => b[1]-a[1]);
+    const colorMap = { 'Tinto': '#722F37', 'Branco': '#d6b97a', 'Rosé': '#d4837a', 'Espumante': '#c9b266', 'Fortificado': '#5C1A1B' };
+    charts.type = new Chart(document.getElementById('chart-type'), { type: 'doughnut', data: { labels: entries.map(e => e[0]), datasets: [{ data: entries.map(e => e[1]), backgroundColor: entries.map(e => colorMap[e[0]] || '#888'), borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 10 } } }, cutout: '62%' } });
+  }
+
+  // Por classificação
+  if (document.getElementById('chart-classification')) {
+    const clsCount = { 'Grand Cru': 0, '1er Cru': 0, 'Village/Outro': 0 };
+    wines.forEach(w => {
+      const c = getClassification(w);
+      if (c === 'Grand Cru') clsCount['Grand Cru']++;
+      else if (c === '1er Cru') clsCount['1er Cru']++;
+      else clsCount['Village/Outro']++;
+    });
+    const entries = Object.entries(clsCount).filter(e => e[1] > 0);
+    charts.classification = new Chart(document.getElementById('chart-classification'), { type: 'doughnut', data: { labels: entries.map(e => e[0]), datasets: [{ data: entries.map(e => e[1]), backgroundColor: ['#d4af37', '#722F37', '#b8a89a'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 10 } } }, cutout: '62%' } });
+  }
+
+  // Selos
+  if (document.getElementById('chart-seals')) {
+    const sealCount = { 'TOP': 0, 'Achado': 0, 'Caro': 0, 'Evitar': 0 };
+    wines.forEach(w => { const s = getSeal(w); if (s) sealCount[s.label]++; });
+    const labels = Object.keys(sealCount);
+    const data = labels.map(l => sealCount[l]);
+    charts.seals = new Chart(document.getElementById('chart-seals'), { type: 'bar', data: { labels, datasets: [{ data, backgroundColor: ['#d4af37', '#5a7a4f', '#a85a5a', '#666'], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0e8da' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } } });
   }
 }
 
