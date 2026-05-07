@@ -280,7 +280,7 @@
       </div>
       <div class="nav-item" data-view="cellar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 22h8M12 16v6M7 2h10l-1 8a4 4 0 0 1-8 0z"/></svg>
-        Adega
+        Vinhos
       </div>
       <div class="nav-item" data-view="cadastro">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
@@ -382,8 +382,8 @@
     <section class="view" id="view-cellar">
       <div class="page-head">
         <div>
-          <h1 class="page-title">Adega</h1>
-          <div class="page-sub"><span id="cellar-count">0</span> vinhos · clique em qualquer um para editar</div>
+          <h1 class="page-title">Vinhos</h1>
+          <div class="page-sub"><span id="cellar-count">0</span> vinhos · ordenados pelo mais recente · clique para editar</div>
         </div>
         <div class="page-actions">
           <button class="btn" onclick="openAddModal()">+ Adicionar</button>
@@ -808,7 +808,7 @@ function getFiltered() {
     if (g && !(w.grape||'').includes(g)) return false;
     if (rt && (w.rating || 0) < rt) return false;
     return true;
-  });
+  }).sort((a, b) => (b.date || '').localeCompare(a.date || '')); // mais recente primeiro
 }
 function applyFilters() { const f = getFiltered(); renderGrid('wine-grid', f); document.getElementById('cellar-count').textContent = f.length; }
 function clearFilters() { ['f-search','f-country','f-region','f-grape','f-rating'].forEach(id => document.getElementById(id).value = ''); applyFilters(); }
