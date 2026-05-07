@@ -955,7 +955,7 @@ function renderGrid(targetId, list) {
             ${starsHtml(w.rating || 0)}
           </div>
           <div class="right">
-            ${(w.store || w.price) ? `<div class="store-line">${w.store ? `Loja: ${escapeHtml(w.store)}` : ''}${(w.store && w.price) ? ' · ' : ''}${w.price ? `<span class="price">${formatPrice(w.price)}</span>` : ''}</div>` : ''}
+            ${(w.store || w.price) ? `<div class="store-line">${w.store ? escapeHtml(w.store) : ''}${(w.store && w.price) ? ' · ' : ''}${w.price ? `<span class="price">${formatPrice(w.price)}</span>` : ''}</div>` : ''}
             <div class="date-line">${formatDate(w.date) || '—'}</div>
           </div>
         </div>
