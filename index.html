@@ -245,6 +245,23 @@
   .map-pop-actions button.pdf-action { background: rgba(176,138,78,0.15); color: #8a6a32; border-color: rgba(176,138,78,0.3); }
   .map-pop-actions button.pdf-action:hover { background: rgba(176,138,78,0.25); }
 
+  /* ============ TOAST DE SAVE ============ */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1c1413; color: #f5ede0; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 10px; z-index: 3000; opacity: 0; transform: translateY(12px); transition: opacity 0.18s ease, transform 0.18s ease; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast .check-circle { width: 18px; height: 18px; background: #5a7a4f; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .toast .check-circle svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 3; fill: none; }
+
+  table.cadastro input.flash, table.cadastro select.flash { animation: saveFlash 0.6s ease; }
+  @keyframes saveFlash {
+    0% { background: rgba(90, 122, 79, 0.35); border-color: #5a7a4f; }
+    100% { background: transparent; border-color: transparent; }
+  }
+
+  .save-status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: rgba(90, 122, 79, 0.12); color: #4a6a3f; font-size: 11.5px; font-weight: 600; letter-spacing: 0.3px; margin-left: 8px; vertical-align: middle; }
+  .save-status .pulse { width: 6px; height: 6px; background: #5a7a4f; border-radius: 50%; }
+  .save-status.idle { background: var(--line-soft); color: var(--ink-mute); }
+  .save-status.idle .pulse { background: var(--ink-mute); }
+
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #d6cdc0; border-radius: 4px; }
@@ -413,7 +430,7 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">Cadastro</h1>
-          <div class="page-sub">Edite qualquer campo direto na tabela · alterações salvam automaticamente</div>
+          <div class="page-sub">Edite qualquer campo · auto-save<span class="save-status idle" id="save-indicator"><span class="pulse"></span><span id="save-indicator-text">Tudo salvo</span></span></div>
         </div>
         <div class="page-actions">
           <button class="btn secondary" onclick="exportJSON()">Exportar</button>
@@ -544,6 +561,11 @@
       <button class="btn" onclick="saveWine()">Salvar</button>
     </div>
   </div>
+</div>
+
+<div class="toast" id="toast">
+  <span class="check-circle"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+  <span id="toast-msg">Salvo</span>
 </div>
 
 <div class="lightbox" id="lightbox">
@@ -752,7 +774,42 @@ function loadWines() {
   SEED.forEach(s => { if (s.photo && !existingPhotos.has(s.photo)) saved.push({ ...s, id: nextId++ }); });
   return saved;
 }
-function saveWines() { localStorage.setItem(STORAGE_KEY, JSON.stringify(wines)); }
+let lastSavedAt = null;
+let saveIndicatorTimer = null;
+
+function saveWines() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
+  lastSavedAt = Date.now();
+  showToast();
+  updateSaveIndicator();
+}
+
+function showToast(msg = 'Salvo automaticamente') {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  if (showToast._timer) clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+function updateSaveIndicator() {
+  const ind = document.getElementById('save-indicator');
+  const txt = document.getElementById('save-indicator-text');
+  if (!ind || !txt) return;
+  if (!lastSavedAt) { ind.classList.add('idle'); txt.textContent = 'Tudo salvo'; return; }
+  const secs = Math.round((Date.now() - lastSavedAt) / 1000);
+  let label;
+  if (secs < 3) label = 'Salvo agora';
+  else if (secs < 60) label = `Salvo há ${secs}s`;
+  else if (secs < 3600) label = `Salvo há ${Math.round(secs/60)}min`;
+  else label = 'Tudo salvo';
+  txt.textContent = label;
+  ind.classList.toggle('idle', secs > 5);
+}
+if (!window._saveIndicatorInterval) {
+  window._saveIndicatorInterval = setInterval(updateSaveIndicator, 1000);
+}
 
 function wineThumb(wine) {
   if (wine.photo) {
@@ -956,9 +1013,17 @@ function updateField(el) {
   const w = wines.find(x => x.id === id); if (!w) return;
   let v = el.value;
   if (f === 'year') v = parseInt(v) || null;
-  if (f === 'price') v = v === '' ? null : parseFloat(v);
+  else if (f === 'price') v = v === '' ? null : parseFloat(v);
   if (typeof v === 'string') v = v.trim();
-  w[f] = v; saveWines(); populateFilters(); renderDashboard();
+  // Skip if no change (prevents double-save on change+blur)
+  if ((w[f] ?? '') === (v ?? '')) return;
+  w[f] = v;
+  saveWines();
+  // Flash visual no campo
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 700);
+  populateFilters();
+  renderDashboard();
 }
 
 function readExifDate(file, callback) {
