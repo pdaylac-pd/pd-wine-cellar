@@ -446,12 +446,8 @@
       <div class="page-head">
         <div>
           <h1 class="page-title">Estudos</h1>
-          <div class="page-sub">Mapas e materiais de apoio das principais regiões vinícolas</div>
+          <div class="page-sub">Mapas das principais regiões vinícolas — clique para ampliar</div>
         </div>
-      </div>
-      <div class="tabs">
-        <button class="tab active" data-tab="mapas">Mapas <span style="opacity:0.6">· 8</span></button>
-        <button class="tab" data-tab="materiais">Materiais <span style="opacity:0.6">· 7</span></button>
       </div>
       <div class="study-grid" id="study-grid"></div>
     </section>
@@ -586,37 +582,19 @@ const STUDY_DATA = {
   ]
 };
 
-let currentStudyTab = 'mapas';
 function renderStudy() {
   const grid = document.getElementById('study-grid'); if (!grid) return;
-  if (currentStudyTab === 'mapas') {
-    grid.innerHTML = STUDY_DATA.maps.map(m => `
-      <div class="study-card" onclick="openLightbox('image', '${m.file}', '${escapeHtml(m.name)}')">
-        <div class="study-thumb">
-          <img src="${m.file}" alt="${escapeHtml(m.name)}" loading="lazy" />
-          <span class="source-badge">${m.source}</span>
-        </div>
-        <div class="study-body">
-          <div class="study-region">${escapeHtml(m.region)}</div>
-          <div class="study-name">${escapeHtml(m.name)}</div>
-        </div>
-      </div>`).join('');
-  } else {
-    grid.innerHTML = STUDY_DATA.materials.map(m => `
-      <div class="study-card pdf-card" onclick="openLightbox('pdf', '${m.file}', '${escapeHtml(m.name)}')">
-        <div class="study-thumb">
-          <svg class="pdf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
-          <span class="pdf-size">PDF · ${m.size}</span>
-        </div>
-        <div class="study-body">
-          <div class="study-region">${escapeHtml(m.region)}</div>
-          <div class="study-name">${escapeHtml(m.name)}</div>
-        </div>
-      </div>`).join('');
-  }
+  grid.innerHTML = STUDY_DATA.maps.map(m => `
+    <div class="study-card" onclick="openLightbox('image', '${m.file}', '${escapeHtml(m.name)}')">
+      <div class="study-thumb">
+        <img src="${m.file}" alt="${escapeHtml(m.name)}" loading="lazy" />
+        <span class="source-badge">${m.source}</span>
+      </div>
+      <div class="study-body">
+        <div class="study-region">${escapeHtml(m.region)}</div>
+        <div class="study-name">${escapeHtml(m.name)}</div>
+      </div>
+    </div>`).join('');
 }
 
 function openLightbox(type, file, title) {
@@ -661,12 +639,6 @@ function findStudyResources(region, country) {
   return result;
 }
 
-document.querySelectorAll('.tab').forEach(t => {
-  t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    t.classList.add('active'); currentStudyTab = t.dataset.tab; renderStudy();
-  });
-});
 document.getElementById('lightbox').addEventListener('click', (e) => {
   if (e.target.id === 'lightbox' || e.target.id === 'lightbox-content') closeLightbox();
 });
