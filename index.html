@@ -118,10 +118,19 @@
 
   .stars span.half { background: linear-gradient(90deg, var(--gold) 50%, var(--gold-soft) 50%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
 
-  .wine-info { font-size: 12px; color: var(--ink-soft); margin: 2px 0; line-height: 1.4; display: flex; align-items: center; gap: 6px; }
-  .wine-info-muted { font-size: 11.5px; color: var(--ink-mute); margin: 2px 0; line-height: 1.4; }
+  .wine-info-row { font-size: 12.5px; color: var(--ink-soft); margin: 3px 0; line-height: 1.4; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .wine-info-row .flag { font-size: 14px; }
+  .wine-info-row strong { color: var(--ink); font-weight: 600; }
+  .wine-info-row .sep { color: var(--ink-mute); margin: 0 4px; font-weight: 300; }
   .wine-info-cls { display: inline-block; padding: 1px 7px; background: rgba(114, 47, 55, 0.08); border-radius: 3px; font-size: 10.5px; font-weight: 700; color: var(--burgundy); letter-spacing: 0.4px; text-transform: uppercase; }
-  .wine-info .flag { font-size: 14px; }
+
+  .wine-divider { border: none; border-top: 1px solid var(--line); margin: 14px 0 10px; }
+  .wine-footer { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+  .wine-footer .left, .wine-footer .right { display: flex; flex-direction: column; gap: 6px; }
+  .wine-footer .right { align-items: flex-end; text-align: right; }
+  .wine-footer .store-line { font-size: 11px; color: var(--ink-mute); white-space: nowrap; }
+  .wine-footer .store-line .price { color: var(--burgundy); font-weight: 600; font-family: 'Cormorant Garamond', serif; font-size: 13px; }
+  .wine-footer .date-line { font-size: 11px; color: var(--ink-mute); }
   .wine-body { padding: 16px 18px 18px; }
   .wine-producer { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 4px; }
   .wine-name { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 600; line-height: 1.2; color: var(--ink); margin-bottom: 8px; }
@@ -922,7 +931,10 @@ function renderGrid(targetId, list) {
     const s = getSeal(w);
     const cls = getClassification(w);
     const reg = getRegionParts(w);
-    const grape = (w.grape || '').split(',')[0].trim();
+    const tagsHtml = (w.tagPrice || w.tagRating)
+      ? `<div style="display:flex;flex-wrap:wrap;gap:4px;">${w.tagRating ? `<span class="tag-chip ${tagClass(w.tagRating)}">${w.tagRating}</span>` : ''}${w.tagPrice ? `<span class="tag-chip ${tagClass(w.tagPrice)}">${w.tagPrice}</span>` : ''}</div>`
+      : '';
+    const regionLine = reg.region ? `${escapeHtml(reg.region)}${reg.sub ? `<span class="sep">|</span>${escapeHtml(reg.sub)}` : ''}` : (reg.sub ? escapeHtml(reg.sub) : '');
     return `
     <div class="wine-card" onclick="openEditModal(${w.id})">
       <div class="wine-thumb">
@@ -933,14 +945,20 @@ function renderGrid(targetId, list) {
       <div class="wine-body">
         ${w.producer ? `<div class="wine-producer">${escapeHtml(w.producer)}</div>` : ''}
         <div class="wine-name">${escapeHtml(w.name || '')}</div>
-        ${(w.year || cls) ? `<div class="wine-info">${w.year ? `<strong style="color:var(--ink);font-weight:600;">${w.year}</strong>` : ''}${cls ? `<span class="wine-info-cls">${cls}</span>` : ''}</div>` : ''}
-        ${w.country ? `<div class="wine-info"><span class="flag">${getFlag(w.country)}</span>${escapeHtml(w.country)}</div>` : ''}
-        ${reg.region ? `<div class="wine-info">${escapeHtml(reg.region)}</div>` : ''}
-        ${reg.sub ? `<div class="wine-info-muted">${escapeHtml(reg.sub)}</div>` : ''}
-        ${grape ? `<div class="wine-info-muted" style="font-style: italic;">${escapeHtml(grape)}</div>` : ''}
-        ${(w.store || w.price) ? `<div class="wine-info-muted">Loja: ${escapeHtml(w.store || '—')}${w.price ? ` · <strong style="color:var(--burgundy);">${formatPrice(w.price)}</strong>` : ''}</div>` : ''}
-        ${(w.tagPrice || w.tagRating) ? `<div class="wine-tag" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">${w.tagRating ? `<span class="tag-chip ${tagClass(w.tagRating)}">${w.tagRating}</span>` : ''}${w.tagPrice ? `<span class="tag-chip ${tagClass(w.tagPrice)}">${w.tagPrice}</span>` : ''}</div>` : ''}
-        <div class="wine-rating">${starsHtml(w.rating || 0)}<span class="wine-date">${formatDate(w.date)}</span></div>
+        ${(w.year || cls) ? `<div class="wine-info-row">${w.year ? `<strong>${w.year}</strong>` : ''}${cls ? `<span class="wine-info-cls">${cls}</span>` : ''}</div>` : ''}
+        ${w.country ? `<div class="wine-info-row"><span class="flag">${getFlag(w.country)}</span>${escapeHtml(w.country)}</div>` : ''}
+        ${regionLine ? `<div class="wine-info-row">${regionLine}</div>` : ''}
+        <hr class="wine-divider">
+        <div class="wine-footer">
+          <div class="left">
+            ${tagsHtml}
+            ${starsHtml(w.rating || 0)}
+          </div>
+          <div class="right">
+            ${(w.store || w.price) ? `<div class="store-line">${w.store ? `Loja: ${escapeHtml(w.store)}` : ''}${(w.store && w.price) ? ' · ' : ''}${w.price ? `<span class="price">${formatPrice(w.price)}</span>` : ''}</div>` : ''}
+            <div class="date-line">${formatDate(w.date) || '—'}</div>
+          </div>
+        </div>
       </div>
     </div>`;
   }).join('');
