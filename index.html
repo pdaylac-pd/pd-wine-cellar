@@ -1147,7 +1147,7 @@ function renderCharts() {
     const pCount = {};
     wines.forEach(w => { if (w.producer) pCount[w.producer] = (pCount[w.producer] || 0) + 1; });
     const top = Object.entries(pCount).sort((a,b) => b[1]-a[1]).slice(0, 10);
-    charts.producers = new Chart(document.getElementById('chart-producers'), { type: 'bar', data: { labels: top.map(e => e[0].length > 28 ? e[0].slice(0,28)+'…' : e[0]), datasets: [{ data: top.map(e => e[1]), backgroundColor: burgundy, borderRadius: 6 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { stepSize: 1 } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } } });
+    charts.producers = new Chart(document.getElementById('chart-producers'), { type: 'bar', data: { labels: top.map(e => e[0].length > 28 ? e[0].slice(0,28)+'…' : e[0]), datasets: [{ data: top.map(e => e[1]), backgroundColor: burgundy, borderRadius: 6 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { stepSize: 1 } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } } } });
   }
 
   // Faixa de preço
