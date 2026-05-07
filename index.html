@@ -307,10 +307,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         Mapa
       </div>
-      <div class="nav-item" data-view="analytics">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-5"/></svg>
-        Análises
-      </div>
       <div class="nav-item" data-view="estudos">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         Estudos
@@ -387,12 +383,20 @@
         </div>
       </div>
 
-      <div class="panel" style="margin-bottom: 20px;">
-        <div class="panel-head">
-          <div><div class="panel-title">Últimos degustados</div><div class="panel-sub">Suas degustações mais recentes</div></div>
-          <button class="btn secondary" onclick="switchView('cellar')">Ver todos →</button>
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Avaliação por país</div><div class="panel-sub">Média de estrelas por origem</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-rating-country"></canvas></div>
         </div>
-        <div class="wine-grid" id="recent-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Por safra (década)</div><div class="panel-sub">Distribuição temporal</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-vintage"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top: 16px;">
+        <div class="panel-head"><div><div class="panel-title">Distribuição de notas</div><div class="panel-sub">Quantos vinhos em cada faixa de avaliação</div></div></div>
+        <div class="chart-wrap"><canvas id="chart-rating-dist"></canvas></div>
       </div>
     </section>
 
@@ -469,28 +473,6 @@
       <div class="study-grid" id="study-grid"></div>
     </section>
 
-    <section class="view" id="view-analytics">
-      <div class="page-head">
-        <div>
-          <h1 class="page-title">Análises</h1>
-          <div class="page-sub">Padrões e descobertas da sua adega</div>
-        </div>
-      </div>
-      <div class="panels">
-        <div class="panel">
-          <div class="panel-head"><div class="panel-title">Avaliação por país</div></div>
-          <div class="chart-wrap"><canvas id="chart-rating-country"></canvas></div>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><div class="panel-title">Por safra (década)</div></div>
-          <div class="chart-wrap"><canvas id="chart-vintage"></canvas></div>
-        </div>
-      </div>
-      <div class="panel" style="margin-top: 16px;">
-        <div class="panel-head"><div class="panel-title">Distribuição de notas</div></div>
-        <div class="chart-wrap"><canvas id="chart-rating-dist"></canvas></div>
-      </div>
-    </section>
   </main>
 </div>
 
@@ -757,7 +739,15 @@ const SEED = [
   { id: 85, photo: "Photos/IMG_7378.jpeg", name: "Marta Pinot Noir", producer: "Marcelo Miras", year: null, country: "Argentina", region: "Patagônia", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-12-03", notes: "Pequeno produtor patagônico.", lat: -39.0333, lng: -67.0667 },
   { id: 86, photo: "Photos/IMG_7383.jpeg", name: "Arbestì Langhe", producer: "Piero Busso", year: null, country: "Itália", region: "Neive, Langhe, Piemonte", grape: "Arneis", type: "Branco", rating: 0, date: "2025-12-03", notes: "Vinho de parcela do produtor cult de Barbaresco.", lat: 44.7333, lng: 8.1167 },
   { id: 87, photo: "Photos/IMG_7387.jpeg", name: "Champagne De Quoi Te Mêles-Tu Brut Nature", producer: "Loïc Naudinot", year: null, country: "França", region: "Vallée de la Marne, Champagne", grape: "Pinot Meunier, Chardonnay", type: "Espumante", rating: 0, date: "2025-12-03", notes: "Grower champagne — vinificações parceladas.", lat: 49.0833, lng: 3.7 },
-  { id: 88, photo: "Photos/IMG_7403.jpeg", name: "Champagne Perpétuelle Non Dosé", producer: "Bonnet-Ponson", year: null, country: "França", region: "Vrigny, Champagne", grape: "Pinot Meunier, Pinot Noir, Chardonnay", type: "Espumante", rating: 0, date: "2025-12-03", notes: "Sistema solera (perpétua) — biodinâmico.", lat: 49.2667, lng: 3.9333 }
+  { id: 88, photo: "Photos/IMG_7403.jpeg", name: "Champagne Perpétuelle Non Dosé", producer: "Bonnet-Ponson", year: null, country: "França", region: "Vrigny, Champagne", grape: "Pinot Meunier, Pinot Noir, Chardonnay", type: "Espumante", rating: 0, date: "2025-12-03", notes: "Sistema solera (perpétua) — biodinâmico.", lat: 49.2667, lng: 3.9333 },
+  // Lote 10 (dez/2025) — 3 duplicatas movidas
+  { id: 89, photo: "Photos/IMG_7436.jpeg", name: "Chassagne-Montrachet Les Chênes Rouge", producer: "Philippe Colin", year: 2018, country: "França", region: "Chassagne-Montrachet, Côte de Beaune", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-12-04", notes: "Chassagne-Montrachet rouge — raro, comum o branco.", lat: 46.9356, lng: 4.7461 },
+  { id: 90, photo: "Photos/IMG_7437.jpeg", name: "Coste della Sesia Juvenia Nebbiolo", producer: "Antoniolo", year: 2018, country: "Itália", region: "Gattinara, Coste della Sesia, Piemonte", grape: "Nebbiolo", type: "Tinto", rating: 0, date: "2025-12-04", notes: "Antoniolo é referência absoluta de Gattinara.", lat: 45.6233, lng: 8.3681 },
+  { id: 91, photo: "Photos/IMG_7443.jpeg", name: "Champagne Blanc de Blancs 1er Cru", producer: "Laurent Lequart", year: null, country: "França", region: "Passy-Grigny, Vallée de la Marne", grape: "Chardonnay", type: "Espumante", rating: 0, date: "2025-12-05", notes: "Récoltant — 100% Chardonnay.", lat: 49.0444, lng: 3.7861 },
+  { id: 92, photo: "Photos/IMG_7445.jpeg", name: "Champagne Vintage", producer: "Laurent Lequart", year: 2012, country: "França", region: "Passy-Grigny, Vallée de la Marne", grape: "Chardonnay, Pinot Meunier", type: "Espumante", rating: 0, date: "2025-12-05", notes: "Safra 2012 — vertical com #91.", lat: 49.0444, lng: 3.7861 },
+  { id: 93, photo: "Photos/IMG_7450.jpeg", name: "Savigny-lès-Beaune Les Godeaux", producer: "Domaine Philippe Girard", year: null, country: "França", region: "Savigny-lès-Beaune, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-12-05", notes: "", lat: 47.0606, lng: 4.8056 },
+  { id: 94, photo: "Photos/IMG_7505.jpeg", name: "Kloof Street Old Vine Chenin Blanc", producer: "Mullineux", year: 2023, country: "África do Sul", region: "Swartland", grape: "Chenin Blanc", type: "Branco", rating: 0, date: "2025-12-07", notes: "Chris & Andrea Mullineux — Swartland Wine of Origin.", lat: -33.5500, lng: 18.7167 },
+  { id: 95, photo: "Photos/IMG_7511.jpeg", name: "Maurice", producer: "Arpayé", year: null, country: "França", region: "Vin de France", grape: "Gamay (provável)", type: "Tinto", rating: 0, date: "2025-12-07", notes: "Vinho natural — produtor Arpayé (Beaujolais provável).", lat: 46.0833, lng: 4.7333 }
 ];
 
 const STORAGE_KEY = 'pd-cellar-v6';
@@ -908,8 +898,6 @@ function renderDashboard() {
     lastFootEl.textContent = `${thisMonth} em ${now.toLocaleDateString('pt-BR', { month: 'long' })}`;
   } else { lastEl.textContent = '—'; lastFootEl.textContent = 'sem datas'; }
 
-  const recent = [...wines].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 4);
-  renderGrid('recent-grid', recent);
   renderCharts();
 }
 
