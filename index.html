@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PD Cellar — Wine Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #faf7f2;
+    --bg-card: #ffffff;
+    --bg-sidebar: #1a0f10;
+    --bg-sidebar-hover: #2a1a1c;
+    --ink: #1c1413;
+    --ink-soft: #5a4a48;
+    --ink-mute: #8a7a78;
+    --line: #ece4d9;
+    --line-soft: #f3ede3;
+    --burgundy: #722F37;
+    --burgundy-deep: #5C1A1B;
+    --gold: #b08a4e;
+    --gold-soft: #d6b97a;
+    --accent: #722F37;
+    --green: #5a7a4f;
+    --shadow-sm: 0 1px 2px rgba(28, 20, 19, 0.04), 0 1px 3px rgba(28, 20, 19, 0.06);
+    --shadow-md: 0 4px 12px rgba(28, 20, 19, 0.06), 0 2px 4px rgba(28, 20, 19, 0.04);
+    --shadow-lg: 0 12px 32px rgba(28, 20, 19, 0.08), 0 4px 8px rgba(28, 20, 19, 0.05);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--ink);
+    font-size: 14px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  .sidebar { background: var(--bg-sidebar); color: #e8dfd5; padding: 28px 0 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+  .brand { padding: 0 24px 28px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .brand-logo { display: flex; align-items: center; gap: 10px; }
+  .brand-logo svg { width: 26px; height: 26px; }
+  .brand-name { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; letter-spacing: 0.5px; color: #f5ede0; }
+  .brand-sub { font-size: 10.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-soft); margin-top: 2px; }
+  .nav { padding: 18px 12px; flex: 1; }
+  .nav-section { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: rgba(214, 185, 122, 0.7); padding: 14px 12px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: #c9bfb2; border-radius: var(--radius-sm); cursor: pointer; font-size: 13.5px; font-weight: 400; transition: all 0.15s ease; margin-bottom: 2px; }
+  .nav-item:hover { background: var(--bg-sidebar-hover); color: #f5ede0; }
+  .nav-item.active { background: var(--burgundy); color: #fff; }
+  .nav-item svg { width: 16px; height: 16px; opacity: 0.85; flex-shrink: 0; }
+  .sidebar-footer { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; color: var(--ink-mute); }
+  .sidebar-footer .stat { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .sidebar-footer .stat-val { color: var(--gold-soft); font-weight: 600; }
+
+  .main { padding: 32px 40px 60px; max-width: 1400px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; gap: 24px; flex-wrap: wrap; }
+  .page-title { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 36px; line-height: 1.1; color: var(--ink); }
+  .page-sub { color: var(--ink-soft); font-size: 13.5px; margin-top: 4px; }
+  .page-actions { display: flex; gap: 8px; }
+
+  .btn { background: var(--ink); color: #fff; border: none; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s ease; font-family: inherit; }
+  .btn:hover { background: var(--burgundy); }
+  .btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn.secondary:hover { background: var(--bg-card); border-color: var(--ink); }
+  .btn svg { width: 14px; height: 14px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 32px; }
+  .kpi { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; transition: all 0.2s ease; }
+  .kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .kpi-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 10px; }
+  .kpi-value { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 500; line-height: 1; color: var(--ink); }
+  .kpi-value .unit { font-size: 14px; color: var(--ink-mute); margin-left: 4px; font-family: 'Inter', sans-serif; font-weight: 400; }
+  .kpi-foot { margin-top: 10px; font-size: 11.5px; color: var(--ink-soft); }
+  .kpi-accent .kpi-value { color: var(--burgundy); }
+
+  .panels { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 32px; }
+  .panel { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .panel-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--ink); }
+  .panel-sub { font-size: 11.5px; color: var(--ink-mute); }
+  .chart-wrap { position: relative; height: 240px; }
+
+  .filters { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px; margin-bottom: 20px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+  .filter-grp label { display: block; font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 6px; font-weight: 500; }
+  .filter-grp input, .filter-grp select { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg); font-family: inherit; font-size: 13px; color: var(--ink); outline: none; transition: border-color 0.15s ease; }
+  .filter-grp input:focus, .filter-grp select:focus { border-color: var(--burgundy); }
+  .filter-grp.search input { padding-left: 34px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%238a7a78' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'><circle cx='11' cy='11' r='8'/><path d='m21 21-4.3-4.3'/></svg>"); background-repeat: no-repeat; background-position: 11px center; background-size: 14px; }
+
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+  .wine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+  .wine-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; }
+  .wine-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); border-color: #e0d4c0; }
+  .wine-thumb { aspect-ratio: 4/5; background: linear-gradient(160deg, #f5ede0 0%, #e8dccb 100%); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .wine-thumb svg { width: 60%; height: 80%; }
+  .wine-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
+  .wine-card:hover .wine-thumb img { transform: scale(1.04); }
+  .wine-thumb .badge { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.92); backdrop-filter: blur(6px); padding: 4px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: var(--burgundy); letter-spacing: 0.5px; }
+  .wine-thumb .year { position: absolute; bottom: 12px; left: 12px; font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 600; color: var(--ink); background: rgba(255,255,255,0.85); backdrop-filter: blur(6px); padding: 2px 10px; border-radius: 4px; }
+  .wine-body { padding: 16px 18px 18px; }
+  .wine-producer { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 4px; }
+  .wine-name { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 600; line-height: 1.2; color: var(--ink); margin-bottom: 8px; }
+  .wine-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
+  .wine-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .wine-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-mute); }
+  .wine-rating { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+  .stars { display: inline-flex; gap: 2px; }
+  .stars span { font-size: 14px; color: var(--gold-soft); }
+  .stars span.filled { color: var(--gold); }
+  .wine-date { font-size: 11px; color: var(--ink-mute); }
+  .wine-purchase { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--ink-soft); margin: 8px 0 6px; padding: 6px 0; border-top: 1px dashed var(--line-soft); }
+  .wine-purchase .store { color: var(--ink-mute); font-weight: 500; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wine-purchase .price { color: var(--burgundy); font-weight: 600; font-family: 'Cormorant Garamond', serif; font-size: 14px; }
+
+  .tag-chip { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.4; }
+  .tag-cb { background: rgba(90, 122, 79, 0.12); color: #4a6a3f; }
+  .tag-dd { background: rgba(176, 138, 78, 0.15); color: #8a6a32; }
+  .tag-bm { background: rgba(74, 106, 138, 0.12); color: #3a5a7a; }
+  .tag-ot { background: rgba(42, 106, 90, 0.13); color: #2a6a5a; }
+  .tag-vh { background: rgba(114, 47, 55, 0.12); color: var(--burgundy); }
+  .tag-nv { background: rgba(138, 74, 74, 0.12); color: #8a4a4a; text-decoration: line-through; }
+  .tag-empty { background: var(--line-soft); color: var(--ink-mute); }
+  .wine-tag { margin-bottom: 8px; display: flex; }
+
+  .tag-options { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-options button { background: var(--bg); border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; font-family: inherit; font-size: 11.5px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; color: var(--ink-soft); }
+  .tag-options button:hover { border-color: var(--ink-soft); }
+  .tag-options button.active.tag-cb { background: rgba(90, 122, 79, 0.15); border-color: #5a7a4f; color: #4a6a3f; }
+  .tag-options button.active.tag-dd { background: rgba(176, 138, 78, 0.15); border-color: var(--gold); color: #8a6a32; }
+  .tag-options button.active.tag-bm { background: rgba(74, 106, 138, 0.15); border-color: #4a6a8a; color: #3a5a7a; }
+  .tag-options button.active.tag-ot { background: rgba(42, 106, 90, 0.15); border-color: #2a6a5a; color: #2a6a5a; }
+  .tag-options button.active.tag-vh { background: rgba(114, 47, 55, 0.15); border-color: var(--burgundy); color: var(--burgundy); }
+  .tag-options button.active.tag-nv { background: rgba(138, 74, 74, 0.12); border-color: #8a4a4a; color: #8a4a4a; }
+
+  .photo-upload { aspect-ratio: 4/5; border-radius: var(--radius); background: linear-gradient(160deg, #f5ede0 0%, #e8dccb 100%); display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; border: 2px dashed transparent; transition: all 0.2s ease; }
+  .photo-upload:hover { border-color: var(--burgundy); }
+  .photo-upload img, .photo-upload svg { width: 100%; height: 100%; object-fit: cover; }
+  .photo-upload .upload-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--ink-soft); font-size: 12px; font-weight: 500; background: rgba(255,255,255,0.9); backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.2s; }
+  .photo-upload:hover .upload-overlay { opacity: 1; }
+  .photo-upload input[type=file] { display: none; }
+  .photo-upload-btn { background: var(--ink); color: #fff; padding: 6px 14px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(28, 20, 19, 0.55); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--bg-card); border-radius: var(--radius-lg); width: 100%; max-width: 720px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+  .modal-head { padding: 24px 28px 16px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--line); }
+  .modal-close { background: transparent; border: none; cursor: pointer; padding: 4px; color: var(--ink-mute); }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 24px 28px; display: grid; grid-template-columns: 240px 1fr; gap: 28px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-grp label { display: block; font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 5px; font-weight: 500; }
+  .form-grp input, .form-grp select, .form-grp textarea { width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg); font-family: inherit; font-size: 13px; color: var(--ink); outline: none; transition: border-color 0.15s ease; }
+  .form-grp input:focus, .form-grp select:focus, .form-grp textarea:focus { border-color: var(--burgundy); }
+  .form-grp textarea { min-height: 80px; resize: vertical; font-family: inherit; }
+  .rating-input { display: flex; gap: 4px; }
+  .rating-input button { background: transparent; border: none; cursor: pointer; padding: 2px; font-size: 22px; color: var(--gold-soft); transition: transform 0.1s; }
+  .rating-input button:hover { transform: scale(1.15); }
+  .rating-input button.filled { color: var(--gold); }
+  .modal-foot { padding: 16px 28px 24px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--line); }
+
+  #map-container { height: calc(100vh - 220px); min-height: 500px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
+  .leaflet-popup-content-wrapper { border-radius: 8px; font-family: 'Inter', sans-serif; }
+  .leaflet-popup-content { margin: 12px 14px; }
+  .map-pop-name { font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 600; color: var(--ink); }
+  .map-pop-region { font-size: 11px; color: var(--ink-mute); text-transform: uppercase; letter-spacing: 1px; }
+  .map-pop-list { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-soft); }
+
+  .table-wrap { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; }
+  table.cadastro { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 1200px; }
+  table.cadastro th { text-align: left; padding: 12px 10px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--ink-mute); font-weight: 600; border-bottom: 1px solid var(--line); background: var(--line-soft); position: sticky; top: 0; z-index: 1; }
+  table.cadastro td { padding: 6px 8px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  table.cadastro tr:hover td { background: #fbf8f2; }
+  table.cadastro .cell-thumb { width: 50px; }
+  table.cadastro .cell-thumb .mini-thumb { width: 38px; height: 50px; border-radius: 4px; overflow: hidden; background: linear-gradient(160deg, #f5ede0, #e8dccb); display: flex; align-items: center; justify-content: center; }
+  table.cadastro .cell-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  table.cadastro .cell-thumb svg { width: 70%; height: 80%; }
+  table.cadastro input, table.cadastro select { border: 1px solid transparent; background: transparent; padding: 6px 8px; font-family: inherit; font-size: 12.5px; color: var(--ink); border-radius: 4px; width: 100%; outline: none; transition: all 0.15s ease; }
+  table.cadastro input:hover, table.cadastro select:hover { background: #fbf8f2; }
+  table.cadastro input:focus, table.cadastro select:focus { background: #fff; border-color: var(--burgundy); }
+  table.cadastro .star-edit { display: inline-flex; gap: 1px; }
+  table.cadastro .star-edit button { background: none; border: none; cursor: pointer; padding: 1px; font-size: 14px; color: var(--gold-soft); }
+  table.cadastro .star-edit button.filled { color: var(--gold); }
+  table.cadastro .row-del { background: transparent; border: none; cursor: pointer; color: var(--ink-mute); padding: 6px; border-radius: 4px; }
+  table.cadastro .row-del:hover { color: #b94a48; background: rgba(185, 74, 72, 0.08); }
+  table.cadastro td.col-name input { font-weight: 600; }
+  table.cadastro .col-w-name { width: 180px; }
+  table.cadastro .col-w-prod { width: 150px; }
+  table.cadastro .col-w-narrow { width: 70px; }
+  table.cadastro .col-w-med { width: 120px; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-mute); }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d6cdc0; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #b8ad9d; }
+
+  @media (max-width: 1280px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, 1fr); } .panels { grid-template-columns: 1fr; } .filters { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; } .main { padding: 20px; } .modal-body { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#d6b97a" stroke-width="1.5">
+          <path d="M8 22h8M12 16v6M7 2h10l-1 8a4 4 0 0 1-8 0z"/>
+          <path d="M9 6h6" stroke="#722F37"/>
+        </svg>
+        <div>
+          <div class="brand-name">PD Cellar</div>
+          <div class="brand-sub">Wine Journal</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">Visão Geral</div>
+      <div class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-view="cellar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 22h8M12 16v6M7 2h10l-1 8a4 4 0 0 1-8 0z"/></svg>
+        Adega
+      </div>
+      <div class="nav-item" data-view="cadastro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        Cadastro
+      </div>
+      <div class="nav-item" data-view="map">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Mapa
+      </div>
+      <div class="nav-item" data-view="analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-5"/></svg>
+        Análises
+      </div>
+
+      <div class="nav-section" style="margin-top: 12px;">Ações</div>
+      <div class="nav-item" id="nav-add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+        Adicionar Vinho
+      </div>
+      <div class="nav-item" id="nav-export">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Exportar JSON
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="stat"><span>Vinhos</span><span class="stat-val" id="sb-count">0</span></div>
+      <div class="stat"><span>Países</span><span class="stat-val" id="sb-countries">0</span></div>
+      <div class="stat"><span>Avaliação média</span><span class="stat-val" id="sb-rating">—</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <section class="view active" id="view-dashboard">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <div class="page-sub">Visão executiva da sua jornada vinícola</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn secondary" onclick="switchView('cellar')">Ver adega</button>
+          <button class="btn" onclick="openAddModal()">+ Adicionar</button>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi kpi-accent">
+          <div class="kpi-label">Total degustado</div>
+          <div class="kpi-value" id="kpi-total">0</div>
+          <div class="kpi-foot">vinhos no histórico</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Avaliação média</div>
+          <div class="kpi-value"><span id="kpi-avg">—</span><span class="unit">/ 5</span></div>
+          <div class="kpi-foot">★ baseado em <span id="kpi-rated">0</span> notas</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Países</div>
+          <div class="kpi-value" id="kpi-countries">0</div>
+          <div class="kpi-foot">regiões exploradas</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Uvas distintas</div>
+          <div class="kpi-value" id="kpi-grapes">0</div>
+          <div class="kpi-foot">variedades degustadas</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Última degustação</div>
+          <div class="kpi-value" id="kpi-last">—</div>
+          <div class="kpi-foot" id="kpi-last-foot">—</div>
+        </div>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Vinhos por país</div><div class="panel-sub">Distribuição da sua adega</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-country"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><div class="panel-title">Top uvas</div><div class="panel-sub">Variedades mais frequentes</div></div></div>
+          <div class="chart-wrap"><canvas id="chart-grape"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom: 20px;">
+        <div class="panel-head">
+          <div><div class="panel-title">Últimos degustados</div><div class="panel-sub">Suas degustações mais recentes</div></div>
+          <button class="btn secondary" onclick="switchView('cellar')">Ver todos →</button>
+        </div>
+        <div class="wine-grid" id="recent-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-cellar">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Adega</h1>
+          <div class="page-sub"><span id="cellar-count">0</span> vinhos · clique em qualquer um para editar</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn" onclick="openAddModal()">+ Adicionar</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="filter-grp search"><label>Buscar</label><input type="text" id="f-search" placeholder="Nome, produtor, uva..." /></div>
+        <div class="filter-grp"><label>País</label><select id="f-country"><option value="">Todos</option></select></div>
+        <div class="filter-grp"><label>Região</label><select id="f-region"><option value="">Todas</option></select></div>
+        <div class="filter-grp"><label>Uva</label><select id="f-grape"><option value="">Todas</option></select></div>
+        <div class="filter-grp"><label>Avaliação</label>
+          <select id="f-rating">
+            <option value="">Todas</option>
+            <option value="5">5 estrelas</option>
+            <option value="4">4+ estrelas</option>
+            <option value="3">3+ estrelas</option>
+          </select>
+        </div>
+        <button class="btn secondary" onclick="clearFilters()" style="height: 38px;">Limpar</button>
+      </div>
+
+      <div class="wine-grid" id="wine-grid"></div>
+    </section>
+
+    <section class="view" id="view-cadastro">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Cadastro</h1>
+          <div class="page-sub">Edite qualquer campo direto na tabela · alterações salvam automaticamente</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn secondary" onclick="exportJSON()">Exportar</button>
+          <button class="btn" onclick="openAddModal()">+ Adicionar</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="cadastro">
+          <thead>
+            <tr>
+              <th>Foto</th><th class="col-w-name">Vinho</th><th class="col-w-prod">Produtor</th><th class="col-w-narrow">Safra</th><th class="col-w-med">País</th><th class="col-w-med">Região</th><th class="col-w-med">Uva</th><th class="col-w-narrow">Tipo</th><th class="col-w-med">Loja</th><th class="col-w-narrow">Valor</th><th class="col-w-med">Tag</th><th>Nota</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="cadastro-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="view" id="view-map">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Mapa de Regiões</h1>
+          <div class="page-sub">Cada pin marca uma região vinícola que você já degustou</div>
+        </div>
+      </div>
+      <div id="map-container"></div>
+    </section>
+
+    <section class="view" id="view-analytics">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Análises</h1>
+          <div class="page-sub">Padrões e descobertas da sua adega</div>
+        </div>
+      </div>
+      <div class="panels">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Avaliação por país</div></div>
+          <div class="chart-wrap"><canvas id="chart-rating-country"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Por safra (década)</div></div>
+          <div class="chart-wrap"><canvas id="chart-vintage"></canvas></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top: 16px;">
+        <div class="panel-head"><div class="panel-title">Distribuição de notas</div></div>
+        <div class="chart-wrap"><canvas id="chart-rating-dist"></canvas></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 class="serif" style="font-size: 26px; font-weight: 600;" id="m-title">Editar vinho</h2>
+        <div style="font-size: 12px; color: var(--ink-mute);" id="m-sub">Atualize qualquer campo abaixo</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label class="photo-upload" id="m-photo-wrap" for="m-photo-input">
+        <div id="m-thumb" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"></div>
+        <div class="upload-overlay">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+          <span class="photo-upload-btn">Trocar foto</span>
+        </div>
+        <input type="file" id="m-photo-input" accept="image/*" />
+      </label>
+      <div class="form-grid">
+        <div class="form-grp full"><label>Nome do vinho</label><input type="text" id="m-name" /></div>
+        <div class="form-grp"><label>Produtor</label><input type="text" id="m-producer" /></div>
+        <div class="form-grp"><label>Safra</label><input type="number" id="m-year" min="1900" max="2030" /></div>
+        <div class="form-grp"><label>País</label><input type="text" id="m-country" /></div>
+        <div class="form-grp"><label>Região</label><input type="text" id="m-region" /></div>
+        <div class="form-grp full"><label>Uva(s)</label><input type="text" id="m-grape" placeholder="Ex: Cabernet Sauvignon, Merlot" /></div>
+        <div class="form-grp"><label>Tipo</label>
+          <select id="m-type">
+            <option value="Tinto">Tinto</option>
+            <option value="Branco">Branco</option>
+            <option value="Rosé">Rosé</option>
+            <option value="Espumante">Espumante</option>
+            <option value="Fortificado">Fortificado</option>
+          </select>
+        </div>
+        <div class="form-grp"><label>Data degustação</label><input type="date" id="m-date" /></div>
+        <div class="form-grp"><label>Loja</label><input type="text" id="m-store" placeholder="Ex: Mistral, Grand Cru..." /></div>
+        <div class="form-grp"><label>Valor (R$)</label><input type="number" id="m-price" step="0.01" placeholder="0,00" /></div>
+        <div class="form-grp full"><label>Tag</label>
+          <div class="tag-options" id="m-tags">
+            <button type="button" class="tag-cb" data-tag="Custo Benefício">Custo Benefício</button>
+            <button type="button" class="tag-dd" data-tag="Dia a Dia">Dia a Dia</button>
+            <button type="button" class="tag-bm" data-tag="Bom">Bom</button>
+            <button type="button" class="tag-ot" data-tag="Ótimo">Ótimo</button>
+            <button type="button" class="tag-vh" data-tag="Vinhasso">Vinhasso</button>
+            <button type="button" class="tag-nv" data-tag="Não vale">Não vale</button>
+          </div>
+        </div>
+        <div class="form-grp full"><label>Avaliação</label>
+          <div class="rating-input" id="m-rating">
+            <button type="button" data-val="1">★</button>
+            <button type="button" data-val="2">★</button>
+            <button type="button" data-val="3">★</button>
+            <button type="button" data-val="4">★</button>
+            <button type="button" data-val="5">★</button>
+          </div>
+        </div>
+        <div class="form-grp full"><label>Observações</label><textarea id="m-notes" placeholder="Aroma, paladar, harmonização, contexto..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" id="m-delete" onclick="deleteWine()" style="margin-right: auto; color: #b94a48;">Excluir</button>
+      <button class="btn secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn" onclick="saveWine()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SEED = [
+  { id: 1, photo: "Photos/2A42A9FC-CC35-4DA7-BDB7-FFA9808820A3.jpg", name: "Volnay", producer: "Pierrick Bouley", year: 2021, country: "França", region: "Volnay, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2026-05-04", notes: "", lat: 46.9667, lng: 4.7833, store: "", price: null, tag: "Ótimo" },
+  { id: 2, photo: "Photos/695820A8-53F7-410D-85CF-F020191BEF7F.jpg", name: "Grande Cuvée 172ème Édition", producer: "Krug", year: null, country: "França", region: "Reims, Champagne", grape: "Pinot Noir, Chardonnay, Pinot Meunier", type: "Espumante", rating: 5, date: "2025-12-09", notes: "Champagne Brut multivintage — assemblage de mais de 120 vinhos.", lat: 49.2583, lng: 4.0317, store: "", price: null, tag: "Vinhasso" },
+  { id: 3, photo: "Photos/5263756A-A621-4F37-9C94-BD9C7633041B.jpg", name: "Dom Pérignon Vintage", producer: "Dom Pérignon", year: 2013, country: "França", region: "Épernay, Champagne", grape: "Pinot Noir, Chardonnay", type: "Espumante", rating: 5, date: "2026-04-09", notes: "", lat: 49.0444, lng: 3.9608, store: "", price: null, tag: "Vinhasso" },
+  { id: 4, photo: "Photos/B48D6C5E-B9C6-4976-BE3D-00722F079856.jpg", name: "Crémant de Bourgogne Brut", producer: "André Delorme", year: null, country: "França", region: "Borgonha", grape: "Chardonnay, Pinot Noir", type: "Espumante", rating: 3, date: "2025-11-01", notes: "", lat: 47.0526, lng: 4.3837, store: "Grand Cru", price: null, tag: "Custo Benefício" },
+  { id: 5, photo: "Photos/454ADD61-674C-4E24-BE2E-19D4BC0053A5.jpg", name: "Brut", producer: "Vita Eterna", year: 2023, country: "Brasil", region: "Serra Gaúcha, RS", grape: "Chardonnay, Pinot Noir", type: "Espumante", rating: 3, date: "2025-12-26", notes: "Espumantes do Novo Mundo — 12,6% ABV.", lat: -29.1657, lng: -51.5378, store: "Vita Eterna", price: 120, tag: "Custo Benefício" },
+  { id: 6, photo: "Photos/818F46E0-9AF9-4A1F-862C-B0D0150AE241.jpg", name: "Marion's Vineyard Pinot Noir", producer: "Schubert", year: 2019, country: "Nova Zelândia", region: "Wairarapa", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2026-03-31", notes: "", lat: -41.0167, lng: 175.5, store: "World Wine", price: 390, tag: "Ótimo" },
+  { id: 7, photo: "Photos/706edbcd-41ce-4041-8b68-5be544cc4376.jpg", name: "Vosne-Romanée", producer: "Georges Noëllat", year: 2022, country: "França", region: "Vosne-Romanée, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 5, date: "2025-11-04", notes: "", lat: 47.1833, lng: 4.9667, store: "", price: null, tag: "Vinhasso" },
+  { id: 8, photo: "Photos/72f09893-76ba-45d5-82eb-5f43cde6cebc.jpg", name: "Meursault 1er Cru Le Porusot", producer: "Domaine Buisson-Battault", year: 2017, country: "França", region: "Meursault, Borgonha", grape: "Chardonnay", type: "Branco", rating: 4, date: "2026-05-04", notes: "", lat: 46.9756, lng: 4.7706, store: "Uva", price: null, tag: "Vinhasso" },
+  { id: 9, photo: "Photos/b0e25bcf-6316-4f5e-a300-86c8fa0e6eeb.jpg", name: "Savigny-lès-Beaune", producer: "Petit-Roy", year: 2022, country: "França", region: "Savigny-lès-Beaune, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 5, date: "2026-05-04", notes: "", lat: 47.0606, lng: 4.8056, store: "", price: null, tag: "Vinhasso" },
+  { id: 10, photo: "Photos/91121E62-EE26-4928-B8CE-4B238DEC14A5.jpg", name: "Ventilado", producer: "Vinos López", year: 2023, country: "Espanha", region: "Valdejalón, Aragón", grape: "Macabeo, Garnacha Blanca", type: "Branco", rating: 3, date: "2025-11-20", notes: "Desde 1970 — vinhos artesanais de Valdejalón.", lat: 41.55, lng: -1.45, store: "Wine4u", price: 110, tag: "Dia a Dia" },
+  { id: 11, photo: "Photos/IMG_6350.jpeg", name: "Pouilly-Loché Les 4 Saisons", producer: "Clos des Rocs (Olivier Giroux)", year: 2023, country: "França", region: "Pouilly-Loché, Mâconnais", grape: "Chardonnay", type: "Branco", rating: 3, date: "2025-10-13", notes: "", lat: 46.3, lng: 4.79, store: "Cellar", price: 340, tag: "Dia a Dia" },
+  { id: 12, photo: "Photos/IMG_6351.jpeg", name: "Langhe Nebbiolo Pian delle Mole", producer: "Giulia Negri (Serradenari)", year: 2023, country: "Itália", region: "La Morra, Langhe, Piemonte", grape: "Nebbiolo", type: "Tinto", rating: 4, date: "2025-10-13", notes: "", lat: 44.6362, lng: 7.9036, store: "", price: null, tag: "Vinhasso" },
+  { id: 13, photo: "Photos/IMG_6353.jpeg", name: "Coteaux Bourguignons Pinot Noir", producer: "Domaine du Four Bassot", year: 2023, country: "França", region: "Coteaux Bourguignons, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-10-13", notes: "", lat: 47.0526, lng: 4.3837 },
+  { id: 14, photo: "Photos/IMG_6534.jpeg", name: "Meursault-Bouchères 1er Cru", producer: "Domaine Génot-Boulanger", year: 2021, country: "França", region: "Meursault, Borgonha", grape: "Chardonnay", type: "Branco", rating: 5, date: "2025-10-23", notes: "", lat: 46.9756, lng: 4.7706, store: "Cellar", price: 1200, tag: "Vinhasso" },
+  { id: 15, photo: "Photos/IMG_6535.jpeg", name: "Pommard", producer: "Domaine Georges Glantenay", year: 2022, country: "França", region: "Pommard, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2025-10-23", notes: "2967 garrafas produzidas.", lat: 47.0167, lng: 4.7833, store: "", price: null, tag: "Vinhasso" },
+  { id: 16, photo: "Photos/IMG_6536.jpeg", name: "Crémant de Bourgogne Blanc de Blancs Brut Nature", producer: "Régis & Sylvain", year: null, country: "França", region: "Borgonha", grape: "Chardonnay", type: "Espumante", rating: 4, date: "2025-10-23", notes: "", lat: 47.0526, lng: 4.3837, store: "Cellar", price: 350, tag: "Custo Benefício" },
+  { id: 17, photo: "Photos/IMG_6539.jpeg", name: "Brunello di Montalcino", producer: "Le Ragnaie (Riccardo Campinoti)", year: 2019, country: "Itália", region: "Montalcino, Toscana", grape: "Sangiovese", type: "Tinto", rating: 3, date: "2025-10-23", notes: "", lat: 43.0567, lng: 11.4886, store: "Cellar", price: 800, tag: "Bom" },
+  { id: 18, photo: "Photos/IMG_6617.jpeg", name: "L'Idylle", producer: "", year: null, country: "", region: "", grape: "", type: "Tinto", rating: 0, date: "2025-10-26", notes: "⚠️ Rótulo sem produtor claro — verificar e completar.", lat: null, lng: null },
+  { id: 19, photo: "Photos/IMG_6618.jpeg", name: "Cabernet Sauvignon", producer: "Far Niente", year: 2019, country: "EUA", region: "Napa Valley, California", grape: "Cabernet Sauvignon", type: "Tinto", rating: 4, date: "2025-10-26", notes: "14,5% ABV.", lat: 38.5025, lng: -122.2654, store: "", price: null, tag: "Vinhasso" },
+  { id: 20, photo: "Photos/IMG_6639.jpeg", name: "Bourgogne Hautes-Côtes de Beaune", producer: "Domaine Jean-Marc Bouley", year: 2018, country: "França", region: "Hautes-Côtes de Beaune, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-10-31", notes: "", lat: 47.0167, lng: 4.8333 },
+  { id: 21, photo: "Photos/IMG_6640.jpeg", name: "Savigny-lès-Beaune 1er Cru Aux Clous", producer: "Domaine d'Ardhuy", year: 2020, country: "França", region: "Savigny-lès-Beaune, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-10-31", notes: "", lat: 47.0606, lng: 4.8056 },
+  { id: 22, photo: "Photos/IMG_6641.jpeg", name: "Langhe Nebbiolo", producer: "Cascina Fontana", year: 2022, country: "Itália", region: "Monforte d'Alba, Langhe, Piemonte", grape: "Nebbiolo", type: "Tinto", rating: 4, date: "2025-10-31", notes: "14% ABV.", lat: 44.5872, lng: 7.9911, store: "", price: null, tag: "Ótimo" },
+  { id: 23, photo: "Photos/IMG_6791.jpeg", name: "Bourgogne Pinot Noir", producer: "Michel Magnien", year: null, country: "França", region: "Morey-Saint-Denis, Côte de Nuits", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2025-11-06", notes: "", lat: 47.1833, lng: 4.9667 },
+  { id: 24, photo: "Photos/IMG_6792.jpeg", name: "La Justice", producer: "", year: null, country: "França", region: "", grape: "", type: "Branco", rating: 4, date: "2025-11-06", notes: "⚠️ Rótulo com ilustração de árvore — produtor não identificado. Possível vinho natural. Verificar.", lat: null, lng: null, store: "", price: null, tag: "Ótimo" },
+  { id: 25, photo: "Photos/IMG_6793.jpeg", name: "Ornaté", producer: "", year: null, country: "França", region: "", grape: "", type: "Tinto", rating: 5, date: "2025-11-06", notes: "⚠️ Mesma arte de rótulo do La Justice — possivelmente mesmo produtor. Verificar.", lat: null, lng: null, store: "", price: null, tag: "" },
+  { id: 26, photo: "Photos/IMG_6802.jpeg", name: "Champagne Heroïne Avize Grand Cru Blanc de Blancs", producer: "La Rogerie", year: 2015, country: "França", region: "Avize, Champagne", grape: "Chardonnay", type: "Espumante", rating: 5, date: "2025-11-06", notes: "Famille Petit-Bordin.", lat: 48.9744, lng: 4.0058, tag: "Vinhasso", store: "" },
+  { id: 27, photo: "Photos/IMG_6816.jpeg", name: "Champagne Les Grands Blancs Grand Cru Extra Brut", producer: "Robert Moncuit", year: null, country: "França", region: "Le Mesnil-sur-Oger, Champagne", grape: "Chardonnay", type: "Espumante", rating: 5, date: "2025-11-07", notes: "Blanc de Blancs — Vigneron desde 1889.", lat: 48.9211, lng: 4.0086, store: "", price: null, tag: "Vinhasso" },
+  { id: 28, photo: "Photos/IMG_6818.jpeg", name: "Mercurey-Sazenay 1er Cru", producer: "Domaine Génot-Boulanger", year: 2021, country: "França", region: "Mercurey, Côte Chalonnaise", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2025-11-07", notes: "", lat: 46.8228, lng: 4.7228, tag: "Ótimo" },
+  { id: 29, photo: "Photos/IMG_6821.jpeg", name: "Beaune Les Bons Feuvres", producer: "Domaine Sébastien Magnien", year: 2019, country: "França", region: "Beaune, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2025-11-07", notes: "", lat: 47.025, lng: 4.8367, tag: "Bom" },
+  { id: 30, photo: "Photos/IMG_6822.jpeg", name: "Grans Muralles", producer: "Familia Torres", year: 2012, country: "Espanha", region: "Conca de Barberà, Catalunha", grape: "Garnacha, Cariñena, Monastrell, Garró, Querol", type: "Tinto", rating: 3, date: "2025-11-07", notes: "Blend de variedades autóctones catalãs raras.", lat: 41.4317, lng: 1.07, tag: "Não vale" },
+  { id: 31, photo: "Photos/IMG_6823.jpeg", name: "Seña", producer: "Viña Seña", year: 2018, country: "Chile", region: "Aconcagua Valley", grape: "Cabernet Sauvignon, Carmenère, Malbec, Petit Verdot, Cabernet Franc", type: "Tinto", rating: 3, date: "2025-11-07", notes: "Ícone chileno — joint venture original Mondavi/Chadwick.", lat: -32.8333, lng: -70.5833, tag: "Bom" },
+  { id: 32, photo: "Photos/IMG_6830.jpeg", name: "Château de Nalys Châteauneuf-du-Pape Grand Vin", producer: "E. Guigal", year: 2016, country: "França", region: "Châteauneuf-du-Pape, Rhône", grape: "Grenache, Syrah, Mourvèdre", type: "Tinto", rating: 3, date: "2025-11-07", notes: "", lat: 44.0561, lng: 4.8311, tag: "Bom" },
+  { id: 33, photo: "Photos/IMG_6831.jpeg", name: "Mitologia Encruzado Reserva", producer: "", year: 2022, country: "Portugal", region: "Dão", grape: "Encruzado", type: "Branco", rating: 3, date: "2025-11-07", notes: "⚠️ Produtor não claro no rótulo — verificar.", lat: 40.7, lng: -8, tag: "Bom" },
+  { id: 34, photo: "Photos/IMG_6832.jpeg", name: "Barbaresco Rabajà", producer: "Giuseppe Cortese", year: 2018, country: "Itália", region: "Barbaresco, Piemonte", grape: "Nebbiolo", type: "Tinto", rating: 3, date: "2025-11-07", notes: "Cru clássico de Barbaresco.", lat: 44.7222, lng: 8.0894, tag: "Ótimo" },
+  { id: 35, photo: "Photos/IMG_6910.jpeg", name: "Saint Felicien Chardonnay", producer: "Catena Zapata", year: 2024, country: "Argentina", region: "Mendoza", grape: "Chardonnay", type: "Branco", rating: 2, date: "2025-11-11", notes: "Elaborado em roble.", lat: -32.8908, lng: -68.8272, tag: "Não vale" },
+  { id: 36, photo: "Photos/IMG_6917.jpeg", name: "Polígonos del Valle de Uco San Pablo Cabernet Franc", producer: "Familia Zuccardi", year: null, country: "Argentina", region: "San Pablo, Uco Valley, Mendoza", grape: "Cabernet Franc", type: "Tinto", rating: 0, date: "2025-11-11", notes: "Vinhos de Pueblo — terroir-driven.", lat: -33.7833, lng: -69.2333 },
+  { id: 37, photo: "Photos/IMG_6918.jpeg", name: "Cincuenta y Cinco Pinot Noir", producer: "Bodega Chacra", year: null, country: "Argentina", region: "Mainqué, Río Negro, Patagônia", grape: "Pinot Noir", type: "Tinto", rating: 4, date: "2025-11-11", notes: "Piero Incisa della Rocchetta — vinhas plantadas em 1955.", lat: -39.0333, lng: -67.0667, tag: "Não vale" },
+  { id: 38, photo: "Photos/IMG_6919.jpeg", name: "Adrianna Vineyard White Stones Chardonnay", producer: "Catena Zapata", year: 2021, country: "Argentina", region: "Gualtallary, Tupungato, Mendoza", grape: "Chardonnay", type: "Branco", rating: 4, date: "2025-11-11", notes: "Vinho de parcela — uma das Chardonnays mais celebradas da América do Sul.", lat: -33.4, lng: -69.15, tag: "Vinhasso" },
+  { id: 39, photo: "Photos/IMG_6920.jpeg", name: "Lágrima Canela", producer: "Bressia", year: null, country: "Argentina", region: "Mendoza", grape: "Chardonnay, Sémillon", type: "Branco", rating: 0, date: "2025-11-11", notes: "", lat: -32.8908, lng: -68.8272 },
+  { id: 40, photo: "Photos/IMG_6931.jpeg", name: "Bourgogne Hautes-Côtes de Nuits Chardonnay", producer: "Domaine Michel Noëllat", year: 2020, country: "França", region: "Hautes-Côtes de Nuits, Borgonha", grape: "Chardonnay", type: "Branco", rating: 0, date: "2025-11-12", notes: "", lat: 47.2, lng: 4.9333 },
+  { id: 41, photo: "Photos/IMG_6933.jpeg", name: "Nuits-Saint-Georges", producer: "Domaine Michel Noëllat", year: 2020, country: "França", region: "Nuits-Saint-Georges, Côte de Nuits", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-11-12", notes: "", lat: 47.1389, lng: 4.9533 },
+  { id: 42, photo: "Photos/IMG_6936.jpeg", name: "Beaune Les Teurons 1er Cru", producer: "Bouchard Père & Fils", year: 2014, country: "França", region: "Beaune, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-11-12", notes: "Maison fundada em 1731.", lat: 47.025, lng: 4.8367 },
+  { id: 43, photo: "Photos/IMG_6937.jpeg", name: "Old Vineyard Riesling", producer: "Humberto Canale", year: 2023, country: "Argentina", region: "Río Negro, Patagônia", grape: "Riesling", type: "Branco", rating: 0, date: "2025-11-12", notes: "957 garrafas — Cosecha 2023, 95 pts.", lat: -39.0333, lng: -67.0667 },
+  { id: 44, photo: "Photos/IMG_6938.jpeg", name: "Cobos Malbec", producer: "Viña Cobos", year: 2021, country: "Argentina", region: "Marchiori Vineyard, Mendoza", grape: "Malbec", type: "Tinto", rating: 2, date: "2025-11-12", notes: "Projeto de Paul Hobbs com Andrea Marchiori.", lat: -32.8908, lng: -68.8272, tag: "Não vale" },
+  { id: 45, photo: "Photos/IMG_6950.jpeg", name: "Volnay Les Caillerets 1er Cru Ancienne Cuvée Carnot", producer: "Bouchard Père & Fils", year: 2014, country: "França", region: "Volnay, Borgonha", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-11-12", notes: "Cuvée histórica do Château de Beaune.", lat: 46.9667, lng: 4.7833 },
+  { id: 46, photo: "Photos/IMG_6957.jpeg", name: "Chablis 1er Cru Fourchaume", producer: "William Fèvre", year: 2021, country: "França", region: "Chablis, Borgonha", grape: "Chardonnay", type: "Branco", rating: 4, date: "2025-11-12", notes: "", lat: 47.8167, lng: 3.8, store: "Grand Cru", price: null, tag: "Bom" },
+  { id: 47, photo: "Photos/IMG_6964.jpeg", name: "Único", producer: "Vega Sicilia", year: 2014, country: "Espanha", region: "Ribera del Duero", grape: "Tempranillo, Cabernet Sauvignon", type: "Tinto", rating: 0, date: "2025-11-12", notes: "Ícone espanhol — La Presidenta.", lat: 41.6321, lng: -4.1284, tag: "Vinhasso", store: "Grand Cru" },
+  { id: 48, photo: "Photos/IMG_6967.jpeg", name: "Grüner Veltliner", producer: "Marlborough Sun", year: 2019, country: "Nova Zelândia", region: "Marlborough", grape: "Grüner Veltliner", type: "Branco", rating: 3, date: "2025-11-12", notes: "GV neozelandês — uva tipicamente austríaca.", lat: -41.5167, lng: 173.95, store: "Grand Cru", price: null, tag: "Custo Benefício" },
+  { id: 49, photo: "Photos/IMG_6977.jpeg", name: "Opus One", producer: "Opus One Winery", year: 2019, country: "EUA", region: "Oakville, Napa Valley", grape: "Cabernet Sauvignon, Cabernet Franc, Merlot, Petit Verdot, Malbec", type: "Tinto", rating: 5, date: "2025-11-13", notes: "Joint venture Mondavi × Baron Philippe de Rothschild — 13,5% ABV.", lat: 38.4044, lng: -122.4128, tag: "Vinhasso", store: "Grand Cru", price: null },
+  { id: 50, photo: "Photos/IMG_6979.jpeg", name: "(rótulo com triângulo)", producer: "", year: null, country: "", region: "", grape: "", type: "Branco", rating: 0, date: "2025-11-13", notes: "⚠️ Rótulo abstrato (triângulo + figura de peixe) — produtor não identificado. Verificar.", lat: null, lng: null },
+  { id: 51, photo: "Photos/IMG_7036.jpeg", name: "Adrianna Vineyard White Bones Chardonnay", producer: "Catena Zapata", year: 2023, country: "Argentina", region: "Gualtallary, Tupungato, Mendoza", grape: "Chardonnay", type: "Branco", rating: 0, date: "2025-11-13", notes: "Parcela vizinha à White Stones — solo calcário com ossos fósseis.", lat: -33.4, lng: -69.15 },
+  { id: 52, photo: "Photos/IMG_7037.jpeg", name: "Vosne-Romanée 1er Cru Les Beaux Monts", producer: "Domaine Michel Noëllat", year: 2020, country: "França", region: "Vosne-Romanée, Côte de Nuits", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-11-13", notes: "Premier Cru clássico de Vosne.", lat: 47.1833, lng: 4.9667 },
+  { id: 53, photo: "Photos/IMG_7043.jpeg", name: "Veuve Clicquot Yellow Label Brut", producer: "Veuve Clicquot", year: null, country: "França", region: "Reims, Champagne", grape: "Pinot Noir, Chardonnay, Pinot Meunier", type: "Espumante", rating: 0, date: "2025-11-13", notes: "Maison desde 1772.", lat: 49.2583, lng: 4.0317 },
+  { id: 54, photo: "Photos/IMG_7115.jpeg", name: "Caminho Dão Branco", producer: "", year: 2022, country: "Portugal", region: "Dão", grape: "", type: "Branco", rating: 0, date: "2025-11-18", notes: "⚠️ Rótulo só mostra Temporão Vinhos (importador). Produtor exato a confirmar.", lat: 40.7, lng: -8, store: "Temporão", price: 198, tag: "Bom" },
+  { id: 55, photo: "Photos/IMG_7123.jpeg", name: "Chablis 1er Cru L'Églantière Fourchaume", producer: "Bouchard Père & Fils", year: 2020, country: "França", region: "Chablis, Borgonha", grape: "Chardonnay", type: "Branco", rating: 0, date: "2025-11-18", notes: "L'Églantière é a cuvée específica de Fourchaume da Bouchard.", lat: 47.8167, lng: 3.8 },
+  { id: 56, photo: "Photos/IMG_7139.jpeg", name: "Bourgogne Aligoté", producer: "Domaine Philippe Girard", year: 2024, country: "França", region: "Savigny-lès-Beaune, Côte d'Or", grape: "Aligoté", type: "Branco", rating: 2, date: "2025-11-19", notes: "", lat: 47.0606, lng: 4.8056, tag: "Não vale" },
+  { id: 57, photo: "Photos/IMG_7140.jpeg", name: "(rótulo pintado abstrato)", producer: "", year: null, country: "", region: "", grape: "", type: "Tinto", rating: 0, date: "2025-11-19", notes: "⚠️ Rótulo é uma pintura abstrata sem texto visível — produtor a confirmar.", lat: null, lng: null },
+  { id: 58, photo: "Photos/IMG_7166.jpeg", name: "Chardonnay Val de Loire", producer: "Domaine de la Morandière (Alexandre Dérané)", year: null, country: "França", region: "Mouzillon, Loire", grape: "Chardonnay", type: "Branco", rating: 3, date: "2025-11-20", notes: "13,4% ABV — Vigneron em Mouzillon.", lat: 47.11, lng: -1.3, tag: "Dia a Dia" },
+  { id: 59, photo: "Photos/IMG_7188.jpeg", name: "Chablis 1er Cru Vau de Vey", producer: "Domaine Pernot-Belicard", year: 2022, country: "França", region: "Chablis, Borgonha", grape: "Chardonnay", type: "Branco", rating: 0, date: "2025-11-21", notes: "", lat: 47.8167, lng: 3.8 },
+  { id: 60, photo: "Photos/IMG_7189.jpeg", name: "Beaune Clos des Mouches Blanc", producer: "Joseph Drouhin", year: 2011, country: "França", region: "Beaune, Borgonha", grape: "Chardonnay", type: "Branco", rating: 0, date: "2025-11-21", notes: "Cuvée icônica branca de Drouhin — 14 anos de guarda.", lat: 47.025, lng: 4.8367 },
+  { id: 61, photo: "Photos/IMG_7190.jpeg", name: "Santenay 1er Cru Les Gravières", producer: "Domaine Chapelle et Fils", year: 2017, country: "França", region: "Santenay, Côte de Beaune", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-11-21", notes: "", lat: 46.9089, lng: 4.6789 },
+  { id: 62, photo: "Photos/IMG_7191.jpeg", name: "Saint-Aubin 1er Cru En Créot", producer: "Domaine Lamy-Pillot", year: 2018, country: "França", region: "Saint-Aubin, Côte de Beaune", grape: "Chardonnay", type: "Branco", rating: 0, date: "2025-11-21", notes: "Vizinho de Chassagne-Montrachet.", lat: 46.9333, lng: 4.7 },
+  { id: 63, photo: "Photos/IMG_7192.jpeg", name: "Maranges Les Aubuzes", producer: "Les Vins du Clair Obscur", year: null, country: "França", region: "Maranges, Côte de Beaune", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-11-21", notes: "Vinimalistes — vinho natural.", lat: 46.895, lng: 4.67 },
+  { id: 64, photo: "Photos/IMG_7229.jpeg", name: "Meursault 1er Cru Charmes", producer: "Ropiteau Frères", year: 2015, country: "França", region: "Meursault, Borgonha", grape: "Chardonnay", type: "Branco", rating: 0, date: "2025-11-23", notes: "Maison desde 1848.", lat: 46.9756, lng: 4.7706 },
+  { id: 65, photo: "Photos/IMG_7232.jpeg", name: "Vinupetra Etna Rosso", producer: "I Vigneri (Salvo Foti)", year: null, country: "Itália", region: "Etna, Sicília", grape: "Nerello Mascalese, Nerello Cappuccio", type: "Tinto", rating: 0, date: "2025-11-23", notes: "Salvo Foti — referência absoluta de Etna.", lat: 37.7333, lng: 14.9833 },
+  { id: 66, photo: "Photos/IMG_7233.jpeg", name: "Langhe Pinot Nero La Tartufaia", producer: "Giulia Negri (Serradenari)", year: null, country: "Itália", region: "La Morra, Langhe, Piemonte", grape: "Pinot Noir", type: "Tinto", rating: 0, date: "2025-11-23", notes: "", lat: 44.6362, lng: 7.9036 },
+  { id: 67, photo: "Photos/IMG_7262.jpeg", name: "Clos Apalta", producer: "Lapostolle", year: 2014, country: "Chile", region: "Apalta, Colchagua Valley", grape: "Carmenère, Cabernet Sauvignon, Merlot", type: "Tinto", rating: 0, date: "2025-11-26", notes: "Ícone de Apalta.", lat: -34.6, lng: -71.2333 }
+];
+
+const STORAGE_KEY = 'pd-cellar-v6';
+let wines = loadWines();
+let editingId = null;
+let pendingPhoto = null;
+
+function loadWines() {
+  let saved = null;
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) saved = JSON.parse(raw); } catch (e) {}
+  if (!saved) return [...SEED];
+  const existingPhotos = new Set(saved.map(w => w.photo).filter(Boolean));
+  let nextId = Math.max(0, ...saved.map(w => w.id || 0)) + 1;
+  SEED.forEach(s => { if (s.photo && !existingPhotos.has(s.photo)) saved.push({ ...s, id: nextId++ }); });
+  return saved;
+}
+function saveWines() { localStorage.setItem(STORAGE_KEY, JSON.stringify(wines)); }
+
+function wineThumb(wine) {
+  if (wine.photo) {
+    const safeWine = JSON.stringify(wine).replace(/"/g, '&quot;');
+    return `<img src="${wine.photo}" alt="${wine.name}" loading="lazy" onerror="this.outerHTML=bottleSvg(JSON.parse(this.dataset.w))" data-w='${JSON.stringify(wine).replace(/'/g, "&#39;")}' />`;
+  }
+  return bottleSvg(wine);
+}
+function bottleSvg(wine) {
+  const colorMap = { 'Tinto': ['#722F37', '#5C1A1B'], 'Branco': ['#e8d585', '#c9b266'], 'Rosé': ['#e8a8a0', '#d4837a'], 'Espumante': ['#f0d878', '#c9b266'], 'Fortificado': ['#4a1d20', '#2d0f11'] };
+  const [c1, c2] = colorMap[wine.type] || colorMap['Tinto'];
+  const initial = (wine.producer || wine.name || '?').charAt(0).toUpperCase();
+  return `<svg viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g${wine.id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${c2}"/><stop offset="50%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect x="42" y="6" width="16" height="22" rx="1" fill="#3a2a28"/><path d="M 38 28 L 38 50 Q 30 58 30 75 L 30 148 Q 30 154 36 154 L 64 154 Q 70 154 70 148 L 70 75 Q 70 58 62 50 L 62 28 Z" fill="url(#g${wine.id})"/><rect x="33" y="80" width="34" height="48" rx="2" fill="#f5ede0" stroke="#d6cdc0" stroke-width="0.5"/><text x="50" y="100" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="14" font-weight="600" fill="#1c1413">${initial}</text><text x="50" y="115" text-anchor="middle" font-family="Inter, sans-serif" font-size="6" font-weight="500" fill="#722F37" letter-spacing="0.5">${wine.year || ''}</text><line x1="36" y1="120" x2="64" y2="120" stroke="#d6cdc0" stroke-width="0.4"/></svg>`;
+}
+function starsHtml(rating) {
+  let s = '<div class="stars">';
+  for (let i = 1; i <= 5; i++) s += `<span class="${i <= rating ? 'filled' : ''}">★</span>`;
+  return s + '</div>';
+}
+function formatDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }); }
+function formatPrice(p) { if (p == null || p === '' || isNaN(p)) return ''; return 'R$ ' + Number(p).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function tagClass(tag) { return ({ 'Custo Benefício': 'tag-cb', 'Dia a Dia': 'tag-dd', 'Bom': 'tag-bm', 'Ótimo': 'tag-ot', 'Vinhasso': 'tag-vh', 'Não vale': 'tag-nv' })[tag] || 'tag-empty'; }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderGrid(targetId, list) {
+  const el = document.getElementById(targetId);
+  if (!list.length) { el.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">Nenhum vinho encontrado com esses filtros.</div>'; return; }
+  el.innerHTML = list.map(w => `
+    <div class="wine-card" onclick="openEditModal(${w.id})">
+      <div class="wine-thumb">${wineThumb(w)}<span class="badge">${w.type || '—'}</span><span class="year">${w.year || 'NV'}</span></div>
+      <div class="wine-body">
+        <div class="wine-producer">${escapeHtml(w.producer || '')}</div>
+        <div class="wine-name">${escapeHtml(w.name || '')}</div>
+        <div class="wine-meta"><span>${escapeHtml(w.country || '')}</span><span class="dot"></span><span>${escapeHtml((w.region || '').split(',')[0])}</span></div>
+        <div class="wine-meta" style="margin-bottom: 6px;"><span style="color: var(--ink-mute); font-size: 11px;">${escapeHtml((w.grape || '').split(',')[0])}</span></div>
+        ${w.tag ? `<div class="wine-tag"><span class="tag-chip ${tagClass(w.tag)}">${w.tag}</span></div>` : ''}
+        ${(w.store || w.price) ? `<div class="wine-purchase"><span class="store">${escapeHtml(w.store || '—')}</span><span class="price">${formatPrice(w.price)}</span></div>` : ''}
+        <div class="wine-rating">${starsHtml(w.rating || 0)}<span class="wine-date">${formatDate(w.date)}</span></div>
+      </div>
+    </div>`).join('');
+}
+
+function getFiltered() {
+  const s = document.getElementById('f-search').value.toLowerCase().trim();
+  const c = document.getElementById('f-country').value;
+  const r = document.getElementById('f-region').value;
+  const g = document.getElementById('f-grape').value;
+  const rt = parseInt(document.getElementById('f-rating').value) || 0;
+  return wines.filter(w => {
+    if (s && !`${w.name||''} ${w.producer||''} ${w.grape||''} ${w.region||''}`.toLowerCase().includes(s)) return false;
+    if (c && w.country !== c) return false;
+    if (r && w.region !== r) return false;
+    if (g && !(w.grape||'').includes(g)) return false;
+    if (rt && (w.rating || 0) < rt) return false;
+    return true;
+  });
+}
+function applyFilters() { const f = getFiltered(); renderGrid('wine-grid', f); document.getElementById('cellar-count').textContent = f.length; }
+function clearFilters() { ['f-search','f-country','f-region','f-grape','f-rating'].forEach(id => document.getElementById(id).value = ''); applyFilters(); }
+function populateFilters() {
+  const fc = document.getElementById('f-country'), fr = document.getElementById('f-region'), fg = document.getElementById('f-grape');
+  const countries = [...new Set(wines.map(w => w.country).filter(Boolean))].sort();
+  const regions = [...new Set(wines.map(w => w.region).filter(Boolean))].sort();
+  const grapes = [...new Set(wines.flatMap(w => (w.grape||'').split(',').map(x => x.trim()).filter(Boolean)))].sort();
+  fc.innerHTML = '<option value="">Todos</option>' + countries.map(x => `<option>${escapeHtml(x)}</option>`).join('');
+  fr.innerHTML = '<option value="">Todas</option>' + regions.map(x => `<option>${escapeHtml(x)}</option>`).join('');
+  fg.innerHTML = '<option value="">Todas</option>' + grapes.map(x => `<option>${escapeHtml(x)}</option>`).join('');
+}
+
+let charts = {};
+function renderDashboard() {
+  const total = wines.length;
+  const rated = wines.filter(w => w.rating);
+  const avg = rated.length ? (rated.reduce((s, w) => s + w.rating, 0) / rated.length).toFixed(1) : '—';
+  const countries = new Set(wines.map(w => w.country).filter(Boolean));
+  const grapes = new Set(wines.flatMap(w => (w.grape||'').split(',').map(x => x.trim()).filter(Boolean)));
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-avg').textContent = avg;
+  document.getElementById('kpi-rated').textContent = rated.length;
+  document.getElementById('kpi-countries').textContent = countries.size;
+  document.getElementById('kpi-grapes').textContent = grapes.size;
+  document.getElementById('sb-count').textContent = total;
+  document.getElementById('sb-countries').textContent = countries.size;
+  document.getElementById('sb-rating').textContent = avg + (avg !== '—' ? '★' : '');
+
+  const dated = wines.filter(w => w.date).map(w => ({ d: new Date(w.date), w })).sort((a,b) => b.d - a.d);
+  const lastEl = document.getElementById('kpi-last'), lastFootEl = document.getElementById('kpi-last-foot');
+  if (dated.length) {
+    const last = dated[0].d, today = new Date(); today.setHours(0,0,0,0);
+    const days = Math.round((today - last) / 86400000);
+    let label = days === 0 ? 'hoje' : days === 1 ? 'ontem' : days < 30 ? `há ${days} dias` : days < 365 ? `há ${Math.round(days/30)} meses` : `há ${Math.round(days/365)} anos`;
+    lastEl.textContent = label;
+    const now = new Date();
+    const thisMonth = wines.filter(w => { if (!w.date) return false; const d = new Date(w.date); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); }).length;
+    lastFootEl.textContent = `${thisMonth} em ${now.toLocaleDateString('pt-BR', { month: 'long' })}`;
+  } else { lastEl.textContent = '—'; lastFootEl.textContent = 'sem datas'; }
+
+  const recent = [...wines].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 4);
+  renderGrid('recent-grid', recent);
+  renderCharts();
+}
+
+function renderCharts() {
+  Object.values(charts).forEach(c => c.destroy && c.destroy()); charts = {};
+  const burgundy = '#722F37';
+  const palette = ['#722F37', '#b08a4e', '#5a7a4f', '#3a5a6c', '#8a4a5a', '#c9943f', '#7a6a5a', '#5C1A1B', '#a06080', '#4a6a4a'];
+  Chart.defaults.font.family = "'Inter', sans-serif"; Chart.defaults.font.size = 11; Chart.defaults.color = '#5a4a48';
+
+  const byCountry = {};
+  wines.forEach(w => { if (w.country) byCountry[w.country] = (byCountry[w.country] || 0) + 1; });
+  const cE = Object.entries(byCountry).sort((a,b) => b[1]-a[1]);
+  charts.country = new Chart(document.getElementById('chart-country'), { type: 'doughnut', data: { labels: cE.map(e=>e[0]), datasets: [{ data: cE.map(e=>e[1]), backgroundColor: palette, borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 10 } } }, cutout: '62%' } });
+
+  const byGrape = {};
+  wines.forEach(w => (w.grape||'').split(',').forEach(g => { const k = g.trim(); if (k) byGrape[k] = (byGrape[k] || 0) + 1; }));
+  const gE = Object.entries(byGrape).sort((a,b)=>b[1]-a[1]).slice(0, 6);
+  charts.grape = new Chart(document.getElementById('chart-grape'), { type: 'bar', data: { labels: gE.map(e=>e[0]), datasets: [{ data: gE.map(e=>e[1]), backgroundColor: burgundy, borderRadius: 6 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { stepSize: 1 } }, y: { grid: { display: false } } } } });
+
+  if (document.getElementById('chart-rating-country')) {
+    const rByC = {}; wines.forEach(w => { if (!w.country) return; if (!rByC[w.country]) rByC[w.country] = []; if (w.rating) rByC[w.country].push(w.rating); });
+    const labels = Object.keys(rByC).filter(k => rByC[k].length);
+    const avgs = labels.map(k => (rByC[k].reduce((s,v)=>s+v,0) / rByC[k].length).toFixed(2));
+    charts.rcountry = new Chart(document.getElementById('chart-rating-country'), { type: 'bar', data: { labels, datasets: [{ data: avgs, backgroundColor: palette, borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 5, grid: { color: '#f0e8da' } }, x: { grid: { display: false } } } } });
+  }
+  if (document.getElementById('chart-vintage')) {
+    const byDec = {}; wines.forEach(w => { if (!w.year) return; const d = Math.floor(w.year/10)*10; byDec[d] = (byDec[d]||0)+1; });
+    const decs = Object.keys(byDec).sort();
+    charts.vintage = new Chart(document.getElementById('chart-vintage'), { type: 'line', data: { labels: decs.map(d=>d+'s'), datasets: [{ data: decs.map(d=>byDec[d]), borderColor: burgundy, backgroundColor: 'rgba(114,47,55,0.1)', fill: true, tension: 0.35, pointRadius: 5, pointBackgroundColor: burgundy, borderWidth: 2.5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0e8da' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } } });
+  }
+  if (document.getElementById('chart-rating-dist')) {
+    const dist = [0,0,0,0,0]; wines.forEach(w => { if (w.rating) dist[w.rating-1]++; });
+    charts.rdist = new Chart(document.getElementById('chart-rating-dist'), { type: 'bar', data: { labels: ['1★','2★','3★','4★','5★'], datasets: [{ data: dist, backgroundColor: ['#d6cdc0','#b8a89a','#b08a4e','#9a4a5a','#722F37'], borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0e8da' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } } });
+  }
+}
+
+let mapInstance = null;
+function renderMap() {
+  if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+  mapInstance = L.map('map-container', { zoomControl: true, attributionControl: true }).setView([30, 5], 2);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap, © CARTO', maxZoom: 19 }).addTo(mapInstance);
+  const byRegion = {};
+  wines.forEach(w => { if (!w.lat || !w.lng) return; const k = w.region || 'Sem região'; if (!byRegion[k]) byRegion[k] = { lat: w.lat, lng: w.lng, country: w.country, region: w.region, wines: [] }; byRegion[k].wines.push(w); });
+  Object.values(byRegion).forEach(r => {
+    const icon = L.divIcon({ className: 'custom-pin', html: `<div style="background:#722F37;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25);"></div>`, iconSize: [18, 18], iconAnchor: [9, 9] });
+    const popup = `<div class="map-pop-name">${escapeHtml(r.region||'')}</div><div class="map-pop-region">${escapeHtml(r.country||'')}</div><div class="map-pop-list">${r.wines.map(w => `• ${escapeHtml(w.producer||'')} — ${escapeHtml(w.name||'')} ${w.year ? `(${w.year})` : ''}`).join('<br>')}</div>`;
+    L.marker([r.lat, r.lng], { icon }).addTo(mapInstance).bindPopup(popup);
+  });
+  setTimeout(() => mapInstance.invalidateSize(), 200);
+}
+
+function renderCadastro() {
+  const tbody = document.getElementById('cadastro-body'); if (!tbody) return;
+  const types = ['Tinto','Branco','Rosé','Espumante','Fortificado'];
+  const tagOpts = ['', 'Custo Benefício', 'Dia a Dia', 'Bom', 'Ótimo', 'Vinhasso', 'Não vale'];
+  tbody.innerHTML = wines.map(w => `
+    <tr data-id="${w.id}">
+      <td class="cell-thumb"><div class="mini-thumb">${wineThumb(w)}</div></td>
+      <td class="col-name"><input data-f="name" value="${escapeHtml(w.name||'')}" /></td>
+      <td><input data-f="producer" value="${escapeHtml(w.producer||'')}" /></td>
+      <td><input data-f="year" type="number" value="${w.year||''}" /></td>
+      <td><input data-f="country" value="${escapeHtml(w.country||'')}" /></td>
+      <td><input data-f="region" value="${escapeHtml(w.region||'')}" /></td>
+      <td><input data-f="grape" value="${escapeHtml(w.grape||'')}" /></td>
+      <td><select data-f="type">${types.map(t => `<option ${t===w.type?'selected':''}>${t}</option>`).join('')}</select></td>
+      <td><input data-f="store" value="${escapeHtml(w.store||'')}" placeholder="—" /></td>
+      <td><input data-f="price" type="number" step="0.01" value="${w.price ?? ''}" placeholder="—" /></td>
+      <td><select data-f="tag">${tagOpts.map(t => `<option value="${t}" ${t===(w.tag||'')?'selected':''}>${t||'—'}</option>`).join('')}</select></td>
+      <td><div class="star-edit">${[1,2,3,4,5].map(n => `<button data-rate="${n}" class="${n<=(w.rating||0)?'filled':''}">★</button>`).join('')}</div></td>
+      <td><button class="row-del" data-action="del"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></td>
+    </tr>`).join('');
+  tbody.querySelectorAll('input[data-f], select[data-f]').forEach(el => {
+    el.addEventListener('change', (e) => updateField(e.target));
+    if (el.tagName === 'INPUT') el.addEventListener('blur', (e) => updateField(e.target));
+  });
+  tbody.querySelectorAll('.star-edit button').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr'); const id = parseInt(tr.dataset.id); const rate = parseInt(b.dataset.rate);
+      const w = wines.find(x => x.id === id); w.rating = w.rating === rate ? 0 : rate;
+      saveWines(); renderCadastro(); renderDashboard();
+    });
+  });
+  tbody.querySelectorAll('[data-action="del"]').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr'); const id = parseInt(tr.dataset.id);
+      const w = wines.find(x => x.id === id); if (!confirm(`Excluir "${w.producer} — ${w.name}"?`)) return;
+      wines = wines.filter(x => x.id !== id); saveWines(); refreshAll();
+    });
+  });
+}
+function updateField(el) {
+  const tr = el.closest('tr'); const id = parseInt(tr.dataset.id); const f = el.dataset.f;
+  const w = wines.find(x => x.id === id); if (!w) return;
+  let v = el.value;
+  if (f === 'year') v = parseInt(v) || null;
+  if (f === 'price') v = v === '' ? null : parseFloat(v);
+  if (typeof v === 'string') v = v.trim();
+  w[f] = v; saveWines(); populateFilters(); renderDashboard();
+}
+
+function readExifDate(file, callback) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const view = new DataView(e.target.result);
+      if (view.getUint16(0) !== 0xFFD8) return callback(null);
+      let offset = 2;
+      while (offset < view.byteLength - 4) {
+        const marker = view.getUint16(offset); offset += 2;
+        if (marker === 0xFFE1) {
+          if (view.getUint32(offset + 2) !== 0x45786966) { offset += view.getUint16(offset); continue; }
+          const tiff = offset + 8;
+          const little = view.getUint16(tiff) === 0x4949;
+          const u16 = (o) => view.getUint16(o, little); const u32 = (o) => view.getUint32(o, little);
+          const ifd0 = tiff + u32(tiff + 4); const n = u16(ifd0);
+          let exifIFD = null;
+          for (let i = 0; i < n; i++) { const e0 = ifd0 + 2 + i * 12; if (u16(e0) === 0x8769) { exifIFD = tiff + u32(e0 + 8); break; } }
+          if (!exifIFD) return callback(null);
+          const m = u16(exifIFD);
+          for (let i = 0; i < m; i++) {
+            const e1 = exifIFD + 2 + i * 12;
+            if (u16(e1) === 0x9003) {
+              const vOff = tiff + u32(e1 + 8); let s = '';
+              for (let j = 0; j < 19; j++) s += String.fromCharCode(view.getUint8(vOff + j));
+              return callback(s.replace(/^(\d{4}):(\d{2}):(\d{2}).*$/, '$1-$2-$3'));
+            }
+          }
+          return callback(null);
+        } else if ((marker & 0xFF00) === 0xFF00) { offset += view.getUint16(offset); } else break;
+      }
+      callback(null);
+    } catch (err) { callback(null); }
+  };
+  reader.readAsArrayBuffer(file.slice(0, 128 * 1024));
+}
+
+function openEditModal(id) {
+  const w = wines.find(x => x.id === id); if (!w) return;
+  editingId = id; pendingPhoto = w.photo || null;
+  document.getElementById('m-title').textContent = 'Editar vinho';
+  document.getElementById('m-sub').textContent = (w.producer || '') + ' — ' + (w.name || '');
+  document.getElementById('m-thumb').innerHTML = wineThumb(w);
+  ['name','producer','year','country','region','grape','type','date','store','notes'].forEach(f => {
+    const el = document.getElementById('m-' + f); if (el) el.value = w[f] ?? (f === 'type' ? 'Tinto' : '');
+  });
+  document.getElementById('m-price').value = w.price ?? '';
+  setRating(w.rating || 0); setTag(w.tag || '');
+  document.getElementById('m-delete').style.display = 'inline-flex';
+  document.getElementById('modal').classList.add('show');
+}
+function openAddModal() {
+  editingId = null; pendingPhoto = null;
+  document.getElementById('m-title').textContent = 'Novo vinho';
+  document.getElementById('m-sub').textContent = 'Preencha os detalhes · clique na foto pra carregar imagem';
+  document.getElementById('m-thumb').innerHTML = bottleSvg({ id: 'new', type: 'Tinto', year: '', producer: '?', name: 'Novo' });
+  ['m-name','m-producer','m-year','m-country','m-region','m-grape','m-notes','m-store','m-price'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-type').value = 'Tinto';
+  document.getElementById('m-date').value = new Date().toISOString().slice(0,10);
+  setRating(0); setTag('');
+  document.getElementById('m-delete').style.display = 'none';
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function setRating(v) { document.querySelectorAll('#m-rating button').forEach(b => b.classList.toggle('filled', parseInt(b.dataset.val) <= v)); document.getElementById('m-rating').dataset.value = v; }
+document.querySelectorAll('#m-rating button').forEach(b => b.addEventListener('click', () => setRating(parseInt(b.dataset.val))));
+
+function setTag(tag) { document.querySelectorAll('#m-tags button').forEach(b => b.classList.toggle('active', b.dataset.tag === tag)); document.getElementById('m-tags').dataset.tag = tag || ''; }
+document.querySelectorAll('#m-tags button').forEach(b => b.addEventListener('click', () => { const cur = document.getElementById('m-tags').dataset.tag; setTag(cur === b.dataset.tag ? '' : b.dataset.tag); }));
+
+document.getElementById('m-photo-input').addEventListener('change', (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  if (!file.type.startsWith('image/')) { alert('Por favor selecione uma imagem'); return; }
+  readExifDate(file, (date) => {
+    if (date) document.getElementById('m-date').value = date;
+    else if (file.lastModified) document.getElementById('m-date').value = new Date(file.lastModified).toISOString().slice(0, 10);
+  });
+  const reader = new FileReader();
+  reader.onload = (ev) => { pendingPhoto = ev.target.result; document.getElementById('m-thumb').innerHTML = `<img src="${pendingPhoto}" style="width:100%;height:100%;object-fit:cover;" />`; };
+  reader.readAsDataURL(file);
+});
+
+function saveWine() {
+  const priceRaw = document.getElementById('m-price').value;
+  const data = {
+    name: document.getElementById('m-name').value.trim(),
+    producer: document.getElementById('m-producer').value.trim(),
+    year: parseInt(document.getElementById('m-year').value) || null,
+    country: document.getElementById('m-country').value.trim(),
+    region: document.getElementById('m-region').value.trim(),
+    grape: document.getElementById('m-grape').value.trim(),
+    type: document.getElementById('m-type').value,
+    date: document.getElementById('m-date').value,
+    store: document.getElementById('m-store').value.trim(),
+    price: priceRaw === '' ? null : parseFloat(priceRaw),
+    tag: document.getElementById('m-tags').dataset.tag || '',
+    rating: parseInt(document.getElementById('m-rating').dataset.value) || 0,
+    notes: document.getElementById('m-notes').value.trim(),
+    photo: pendingPhoto
+  };
+  if (!data.name) { alert('Nome do vinho é obrigatório'); return; }
+  if (editingId) { const idx = wines.findIndex(w => w.id === editingId); wines[idx] = { ...wines[idx], ...data }; }
+  else { const newId = Math.max(0, ...wines.map(w => w.id)) + 1; wines.push({ id: newId, ...data, lat: null, lng: null }); }
+  saveWines(); refreshAll(); closeModal();
+}
+function deleteWine() {
+  if (!editingId) return;
+  if (!confirm('Excluir este vinho?')) return;
+  wines = wines.filter(w => w.id !== editingId); saveWines(); refreshAll(); closeModal();
+}
+
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item[data-view]').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelector(`.nav-item[data-view="${name}"]`)?.classList.add('active');
+  if (name === 'map') setTimeout(renderMap, 50);
+  if (name === 'cadastro') renderCadastro();
+}
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(wines, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'pd-cellar.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function refreshAll() {
+  populateFilters(); applyFilters(); renderDashboard();
+  if (document.getElementById('view-map').classList.contains('active')) renderMap();
+  if (document.getElementById('view-cadastro').classList.contains('active')) renderCadastro();
+}
+
+document.querySelectorAll('.nav-item[data-view]').forEach(n => n.addEventListener('click', () => switchView(n.dataset.view)));
+document.getElementById('nav-add').addEventListener('click', openAddModal);
+document.getElementById('nav-export').addEventListener('click', exportJSON);
+['f-search','f-country','f-region','f-grape','f-rating'].forEach(id => {
+  document.getElementById(id).addEventListener('input', applyFilters);
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+document.getElementById('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+refreshAll();
+</script>
+</body>
+</html>
